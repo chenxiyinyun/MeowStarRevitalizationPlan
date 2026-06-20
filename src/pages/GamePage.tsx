@@ -15,6 +15,7 @@ const PLACEMENT_ERROR_MESSAGES: Record<string, string> = {
   no_fuel: '燃料不足',
   locked_building: '建筑未解锁',
   out_of_bounds: '位置超出地图范围',
+  water: '水面不可放置建筑',
 }
 
 /** 迷雾区域名称 */

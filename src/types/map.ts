@@ -19,6 +19,8 @@ export interface TileData {
   terrain: Terrain
   unlocked: boolean // 是否已解锁（非迷雾）
   buildingId?: string // 占据该瓦片的建筑实例 ID
+  /** 道路子类型 ID（仅当 terrain === 'road' 时有值），对应 RoadType.id */
+  roadType?: string
 }
 
 /** 相机状态 */

@@ -28,6 +28,7 @@ import {
   ZOOM_MIN,
 } from '@/types'
 import { getBuildingType } from '@/game/data/buildings'
+import { getRoadType } from '@/game/data/roads'
 import { getCatType } from '@/game/data/cats'
 import { getMapWorldBounds, gridToScreen, screenToGrid } from './iso'
 
@@ -182,7 +183,7 @@ export class MapEngine {
         if (!tile) continue
 
         const { sx, sy } = gridToScreen(x, y, this.tileSize)
-        const color = TERRAIN_COLORS[tile.terrain]
+        const color = this.getTileColor(tile)
 
         const g = new Graphics()
         g.poly([sx, sy, sx + w / 2, sy + h / 2, sx, sy + h, sx - w / 2, sy + h / 2])
@@ -193,6 +194,15 @@ export class MapEngine {
         this.tileGraphics.set(`${x},${y}`, g)
       }
     }
+  }
+
+  /** 获取瓦片渲染颜色（道路使用 roadType 对应的颜色） */
+  private getTileColor(tile: TileData): number {
+    if (tile.terrain === 'road' && tile.roadType) {
+      const roadType = getRoadType(tile.roadType)
+      if (roadType) return roadType.color
+    }
+    return TERRAIN_COLORS[tile.terrain]
   }
 
   // ─── 建筑渲染 ──────────────────────────────────────────
@@ -589,7 +599,7 @@ export class MapEngine {
           const w = this.tileSize.w
           const h = this.tileSize.h
           g.poly([sx, sy, sx + w / 2, sy + h / 2, sx, sy + h, sx - w / 2, sy + h / 2])
-          g.fill({ color: TERRAIN_COLORS[tile.terrain] })
+          g.fill({ color: this.getTileColor(tile) })
           g.stroke({ color: TILE_STROKE_COLOR, width: 1, alpha: TILE_STROKE_ALPHA })
         }
       }

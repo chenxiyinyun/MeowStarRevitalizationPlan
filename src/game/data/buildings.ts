@@ -1,7 +1,8 @@
 /**
- * 21 种建筑配置数据（五阶段递进）
+ * 建筑配置数据（五阶段递进）
  * 依据：development-design.md 5.3.1 建筑体系
  *
+ * 道路已独立到 roads.ts，作为地形铺设而非建筑。
  * 颜色为纯色占位，后期替换为 AI 生成等距建筑贴图。
  * height 用于等距渲染的立体高度（像素）。
  */
@@ -19,17 +20,6 @@ export const BUILDING_TYPES: BuildingType[] = [
     footprint: { w: 1, h: 1 },
     color: 0x4a9d5e,
     height: 2,
-  },
-  {
-    id: 'dirt_path',
-    name: '泥土小路',
-    description: '最基础的道路',
-    category: 'road',
-    cost: { fuel: 1 },
-    unlockLevel: 1,
-    footprint: { w: 1, h: 1 },
-    color: 0x8d6e63,
-    height: 1,
   },
   {
     id: 'tree_small',
@@ -55,17 +45,6 @@ export const BUILDING_TYPES: BuildingType[] = [
   },
 
   // ─── 阶段二 · 村落（Lv2-3）───
-  {
-    id: 'gravel_path',
-    name: '碎石路',
-    description: '比泥路更结实',
-    category: 'road',
-    cost: { fuel: 2 },
-    unlockLevel: 2,
-    footprint: { w: 1, h: 1 },
-    color: 0x9e9e9e,
-    height: 1,
-  },
   {
     id: 'wooden_house',
     name: '木屋',
@@ -124,17 +103,6 @@ export const BUILDING_TYPES: BuildingType[] = [
 
   // ─── 阶段三 · 小镇（Lv4-6）───
   {
-    id: 'asphalt_road',
-    name: '柏油路',
-    description: '平整的黑色路面',
-    category: 'road',
-    cost: { fuel: 4 },
-    unlockLevel: 4,
-    footprint: { w: 1, h: 1 },
-    color: 0x424242,
-    height: 1,
-  },
-  {
     id: 'townhouse',
     name: '联排房屋',
     description: '紧凑的住宅建筑',
@@ -192,17 +160,6 @@ export const BUILDING_TYPES: BuildingType[] = [
 
   // ─── 阶段四 · 城市（Lv7-10）───
   {
-    id: 'city_road',
-    name: '城市道路',
-    description: '宽阔的城市干道',
-    category: 'road',
-    cost: { fuel: 6 },
-    unlockLevel: 7,
-    footprint: { w: 1, h: 1 },
-    color: 0x37474f,
-    height: 1,
-  },
-  {
     id: 'apartment',
     name: '公寓楼',
     description: '多层住宅建筑',
@@ -259,17 +216,6 @@ export const BUILDING_TYPES: BuildingType[] = [
   },
 
   // ─── 阶段五 · 都市（Lv11+）───
-  {
-    id: 'highway',
-    name: '高速路',
-    description: '城市间的高速通道',
-    category: 'road',
-    cost: { fuel: 10 },
-    unlockLevel: 11,
-    footprint: { w: 1, h: 1 },
-    color: 0x263238,
-    height: 2,
-  },
   {
     id: 'skyscraper',
     name: '摩天大楼',

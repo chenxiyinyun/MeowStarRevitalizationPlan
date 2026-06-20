@@ -80,7 +80,14 @@ export const useBuildingStore = create<BuildingStore>((set, get) => ({
       return result
     }
 
-    // 校验瓦片是否已有建筑
+    // 水面地形不可放置建筑
+    if (tile.terrain === 'water') {
+      const result: PlacementResult = { ok: false, reason: 'water' }
+      set({ lastPlacementError: result })
+      return result
+    }
+
+    // 校验瓦片是否已有建筑（道路地形允许放置建筑 = 沿街建筑）
     if (tile.buildingId) {
       const result: PlacementResult = { ok: false, reason: 'occupied' }
       set({ lastPlacementError: result })

@@ -8,7 +8,11 @@
 import { create } from 'zustand'
 import type { Camera, FogRegion, TileData, TileSize, Terrain } from '@/types'
 import { GRID_HEIGHT, GRID_WIDTH, TILE_SIZE, ZOOM_MAX, ZOOM_MIN } from '@/types'
+import type { PaveResult } from '@/types'
+import { PAVE_ROAD_XP } from '@/types'
+import { getRoadType } from '@/game/data/roads'
 import { createInitialFogRegions, getFogRegionAt } from '@/game/data/fogRegions'
+import { useProgressStore } from './progressStore'
 
 interface MapStore {
   gridWidth: number
@@ -32,6 +36,12 @@ interface MapStore {
   checkFogReveal: (level: number, pomodoroCount: number) => string[]
   /** 设置瓦片的 buildingId */
   setTileBuilding: (x: number, y: number, buildingId: string | undefined) => void
+  /**
+   * 铺设道路：将瓦片地形改为 road 并记录道路子类型
+   * 校验：瓦片在范围内 → 已解锁 → 非水面 → 道路类型已解锁 → 燃料充足
+   * 成功：扣燃料、设 terrain='road' + roadType、XP+5
+   */
+  paveRoad: (x: number, y: number, roadTypeId: string) => PaveResult
   /** 清空最近揭开的区域 ID */
   clearLastRevealed: () => void
   /** 从存档恢复 */
@@ -172,6 +182,68 @@ export const useMapStore = create<MapStore>((set, get) => ({
       ry === y ? row.map((tile, tx) => (tx === x ? { ...tile, buildingId } : tile)) : row
     )
     set({ tiles: newTiles })
+  },
+
+  paveRoad: (x, y, roadTypeId) => {
+    const roadType = getRoadType(roadTypeId)
+    if (!roadType) {
+      return { ok: false, reason: 'locked_road' as const }
+    }
+
+    const { tiles, gridWidth, gridHeight } = get()
+    if (x < 0 || x >= gridWidth || y < 0 || y >= gridHeight) {
+      return { ok: false, reason: 'out_of_bounds' as const }
+    }
+
+    const tile = tiles[y]?.[x]
+    if (!tile) {
+      return { ok: false, reason: 'out_of_bounds' as const }
+    }
+
+    // 未解锁（迷雾覆盖）
+    if (!tile.unlocked) {
+      return { ok: false, reason: 'locked' as const }
+    }
+
+    // 水面不可铺路
+    if (tile.terrain === 'water') {
+      return { ok: false, reason: 'water' as const }
+    }
+
+    // 道路类型未解锁
+    const progressStore = useProgressStore.getState()
+    if (roadType.unlockLevel > progressStore.level) {
+      return { ok: false, reason: 'locked_road' as const }
+    }
+
+    // 燃料不足
+    if (roadType.cost.fuel > 0 && progressStore.fuel < roadType.cost.fuel) {
+      return { ok: false, reason: 'no_fuel' as const }
+    }
+
+    // 如果已经是同类型道路，不重复扣费
+    if (tile.terrain === 'road' && tile.roadType === roadTypeId) {
+      return { ok: true }
+    }
+
+    // 扣燃料
+    if (roadType.cost.fuel > 0) {
+      progressStore.spendFuel(roadType.cost.fuel)
+    }
+    // XP +5
+    progressStore.addXp(PAVE_ROAD_XP)
+
+    // 更新瓦片地形
+    const newTiles = tiles.map((row, ry) =>
+      ry === y
+        ? row.map((t, tx) =>
+            tx === x ? { ...t, terrain: 'road' as Terrain, roadType: roadTypeId } : t
+          )
+        : row
+    )
+    set({ tiles: newTiles })
+
+    return { ok: true }
   },
 
   clearLastRevealed: () => set({ lastRevealedRegionId: null }),

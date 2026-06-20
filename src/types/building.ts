@@ -58,7 +58,31 @@ export const BUILDING_CATEGORIES: CategoryInfo[] = [
 /** 放置建筑获得 XP */
 export const PLACE_BUILDING_XP = 10
 
+/** 铺设道路获得 XP */
+export const PAVE_ROAD_XP = 5
+
 /** 放置校验结果 */
 export type PlacementResult =
   | { ok: true }
-  | { ok: false; reason: 'locked' | 'occupied' | 'no_fuel' | 'locked_building' | 'out_of_bounds' }
+  | {
+      ok: false
+      reason: 'locked' | 'occupied' | 'no_fuel' | 'locked_building' | 'out_of_bounds' | 'water'
+    }
+
+// ─── 道路类型（独立于建筑系统，作为地形铺设） ───────────────
+
+/** 道路类型配置（静态数据） */
+export interface RoadType {
+  id: string
+  name: string
+  description: string
+  cost: { fuel: number }
+  unlockLevel: number
+  /** 纯色占位颜色（16 进制） */
+  color: number
+}
+
+/** 铺路校验结果 */
+export type PaveResult =
+  | { ok: true }
+  | { ok: false; reason: 'locked' | 'no_fuel' | 'locked_road' | 'out_of_bounds' | 'water' }

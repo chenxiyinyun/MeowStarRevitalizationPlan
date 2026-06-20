@@ -16,6 +16,41 @@ import { usePomodoroStore } from '@/store/pomodoroStore'
 import { useMapStore } from '@/store/mapStore'
 import { useBuildingStore } from '@/store/buildingStore'
 import { useCatStore } from '@/store/catStore'
+import { ROAD_TYPE_MAP } from '@/game/data/roads'
+
+/**
+ * 迁移旧存档：将道路建筑（原 category='road' 的 BuildingInstance）
+ * 转换为道路地形（tile.terrain='road' + tile.roadType）
+ * @returns [存档, 是否发生了迁移]
+ */
+function migrateRoadBuildings(save: SaveData): [SaveData, boolean] {
+  if (!save.map?.tiles) return [save, false]
+
+  const roadBuildingIds = new Set(Object.keys(ROAD_TYPE_MAP))
+  let migrated = false
+
+  // 过滤掉道路建筑，同时将对应瓦片改为道路地形
+  const newBuildings = (save.buildings ?? []).filter((b) => {
+    if (roadBuildingIds.has(b.typeId)) {
+      // 将该建筑所在瓦片改为道路地形
+      const tile = save.map!.tiles[b.y]?.[b.x]
+      if (tile) {
+        tile.terrain = 'road'
+        tile.roadType = b.typeId
+        tile.buildingId = undefined
+        migrated = true
+      }
+      return false // 从建筑列表中移除
+    }
+    return true
+  })
+
+  if (migrated) {
+    save.buildings = newBuildings
+  }
+
+  return [save, migrated]
+}
 
 /** 从各 store 收集当前状态，组装成 SaveData */
 export function collectSaveData(): SaveData {
@@ -92,30 +127,39 @@ export function initSave(): boolean {
   }
 
   // 存在存档，hydrate 各 store（兼容旧存档可能缺少 currentPomodoro 字段）
-  useUserStore.getState().hydrate(existing.profile, existing.settings)
-  useProgressStore.getState().setProgress(existing.progress)
-  usePomodoroStore.getState().hydrate(existing.currentPomodoro ?? null, existing.pomodoroHistory)
+  // 迁移旧存档中的道路建筑为道路地形
+  const [migrated, didMigrate] = migrateRoadBuildings(existing)
+
+  useUserStore.getState().hydrate(migrated.profile, migrated.settings)
+  useProgressStore.getState().setProgress(migrated.progress)
+  usePomodoroStore.getState().hydrate(migrated.currentPomodoro ?? null, migrated.pomodoroHistory)
 
   // 恢复地图状态（兼容无地图数据的旧存档）
-  if (existing.map && existing.map.tiles && existing.map.tiles.length > 0) {
+  if (migrated.map && migrated.map.tiles && migrated.map.tiles.length > 0) {
     useMapStore.getState().hydrate({
-      gridWidth: existing.map.gridWidth,
-      gridHeight: existing.map.gridHeight,
-      tiles: existing.map.tiles,
-      camera: existing.map.camera,
-      fogRegions: existing.map.fogRegions,
+      gridWidth: migrated.map.gridWidth,
+      gridHeight: migrated.map.gridHeight,
+      tiles: migrated.map.tiles,
+      camera: migrated.map.camera,
+      fogRegions: migrated.map.fogRegions,
     })
   }
 
   // 恢复建筑状态（兼容旧存档）
-  if (existing.buildings && Array.isArray(existing.buildings)) {
-    useBuildingStore.getState().hydrate(existing.buildings)
+  if (migrated.buildings && Array.isArray(migrated.buildings)) {
+    useBuildingStore.getState().hydrate(migrated.buildings)
   }
 
   // 恢复猫咪状态（兼容旧存档）
-  if (existing.cats && Array.isArray(existing.cats)) {
-    useCatStore.getState().hydrate(existing.cats)
+  if (migrated.cats && Array.isArray(migrated.cats)) {
+    useCatStore.getState().hydrate(migrated.cats)
   }
+
+  // 如果发生了迁移，立即写入新存档
+  if (didMigrate) {
+    writeSave(migrated)
+  }
+
   return false
 }
 
