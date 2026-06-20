@@ -23,17 +23,39 @@ interface MapViewProps {
   placementBuildingType: string | null
   /** 当前选中的道路类型 ID（铺路模式），null 表示非铺路模式 */
   pavingRoadType?: string | null
-  /** 放置结果回调（成功/失败时通知父组件） */
-  onPlacementResult?: (success: boolean, reason?: string) => void
+  /** 是否处于拆除模式 */
+  demolishMode?: boolean
+  /** 是否处于移动模式 */
+  moveMode?: boolean
+  /** 放置结果回调（成功/失败时通知父组件，含邻路加成信息） */
+  onPlacementResult?: (
+    success: boolean,
+    reason?: string,
+    bonusXp?: number,
+    adjacentToRoad?: boolean
+  ) => void
   /** 铺路结果回调（成功/失败时通知父组件） */
   onPaveResult?: (success: boolean, reason?: string) => void
+  /** 拆除结果回调（成功/失败时通知父组件，含返还燃料） */
+  onDemolishResult?: (
+    success: boolean,
+    reason?: string,
+    refundedFuel?: number,
+    buildingName?: string
+  ) => void
+  /** 移动结果回调（成功/失败时通知父组件） */
+  onMoveResult?: (success: boolean, reason?: string, buildingName?: string) => void
 }
 
 export default function MapView({
   placementBuildingType,
   pavingRoadType,
+  demolishMode,
+  moveMode,
   onPlacementResult,
   onPaveResult,
+  onDemolishResult,
+  onMoveResult,
 }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const engineRef = useRef<MapEngine | null>(null)
@@ -153,7 +175,7 @@ export default function MapView({
         if (result.ok) {
           // 更新引擎建筑渲染
           engine.updateBuildings(useBuildingStore.getState().buildings)
-          onPlacementResult?.(true)
+          onPlacementResult?.(true, undefined, result.bonusXp, result.adjacentToRoad)
         } else {
           onPlacementResult?.(false, result.reason)
         }
@@ -184,6 +206,50 @@ export default function MapView({
       engine.clearPreview()
     }
   }, [pavingRoadType, onPaveResult])
+
+  // 拆除模式变化时，更新引擎
+  useEffect(() => {
+    const engine = engineRef.current
+    if (!engine) return
+
+    if (demolishMode) {
+      engine.setDemolishMode(true, (gx, gy) => {
+        const result = useBuildingStore.getState().demolishBuilding(gx, gy)
+        if (result.ok) {
+          // 建筑列表变化通过 buildingStore 订阅自动触发 engine.updateBuildings
+          // tiles 变化（buildingId 清空）通过 mapStore 订阅自动触发 engine.updateTiles
+          onDemolishResult?.(true, undefined, result.refundedFuel, result.buildingName)
+        } else {
+          onDemolishResult?.(false, result.reason)
+        }
+      })
+    } else {
+      engine.setDemolishMode(false)
+      engine.clearPreview()
+    }
+  }, [demolishMode, onDemolishResult])
+
+  // 移动模式变化时，更新引擎
+  useEffect(() => {
+    const engine = engineRef.current
+    if (!engine) return
+
+    if (moveMode) {
+      engine.setMoveMode(true, (fromX, fromY, toX, toY) => {
+        const result = useBuildingStore.getState().moveBuilding(fromX, fromY, toX, toY)
+        if (result.ok) {
+          // 建筑列表变化通过 buildingStore 订阅自动触发 engine.updateBuildings
+          // tiles 变化通过 mapStore 订阅自动触发 engine.updateTiles
+          onMoveResult?.(true, undefined, result.buildingName)
+        } else {
+          onMoveResult?.(false, result.reason)
+        }
+      })
+    } else {
+      engine.setMoveMode(false)
+      engine.clearPreview()
+    }
+  }, [moveMode, onMoveResult])
 
   // 订阅 buildingStore 变化，更新引擎建筑渲染
   useEffect(() => {

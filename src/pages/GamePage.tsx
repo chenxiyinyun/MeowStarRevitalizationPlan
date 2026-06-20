@@ -27,6 +27,21 @@ const PAVE_ERROR_MESSAGES: Record<string, string> = {
   water: '水面不可铺设道路',
 }
 
+/** 拆除错误提示文案 */
+const DEMOLISH_ERROR_MESSAGES: Record<string, string> = {
+  no_building: '该位置没有建筑',
+  out_of_bounds: '位置超出地图范围',
+}
+
+/** 移动错误提示文案 */
+const MOVE_ERROR_MESSAGES: Record<string, string> = {
+  no_building: '该位置没有建筑',
+  out_of_bounds: '位置超出地图范围',
+  locked: '目标区域未解锁',
+  occupied: '目标位置已有建筑',
+  water: '水面不可放置建筑',
+}
+
 /** 迷雾区域名称 */
 const FOG_REGION_NAMES: Record<string, string> = {
   east: '东区',
@@ -45,6 +60,8 @@ function GamePage() {
   const { play, muted, toggleMute } = useSound()
   const [selectedBuildingType, setSelectedBuildingType] = useState<string | null>(null)
   const [selectedRoadType, setSelectedRoadType] = useState<string | null>(null)
+  const [demolishMode, setDemolishMode] = useState(false)
+  const [moveMode, setMoveMode] = useState(false)
   const [toast, setToast] = useState<{
     message: string
     type: 'success' | 'error' | 'info'
@@ -63,25 +80,32 @@ function GamePage() {
     prevLevelRef.current = level
   }, [level, play])
 
-  // ESC 键取消放置/铺路模式
+  // ESC 键取消放置/铺路/拆除/移动模式
   useEffect(() => {
-    if (!selectedBuildingType && !selectedRoadType) return
+    if (!selectedBuildingType && !selectedRoadType && !demolishMode && !moveMode) return
     const onKeydown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setSelectedBuildingType(null)
         setSelectedRoadType(null)
+        setDemolishMode(false)
+        setMoveMode(false)
       }
     }
     window.addEventListener('keydown', onKeydown)
     return () => window.removeEventListener('keydown', onKeydown)
-  }, [selectedBuildingType, selectedRoadType])
+  }, [selectedBuildingType, selectedRoadType, demolishMode, moveMode])
 
   // 放置结果回调
   const onPlacementResult = useCallback(
-    (success: boolean, reason?: string) => {
+    (success: boolean, reason?: string, bonusXp?: number, adjacentToRoad?: boolean) => {
       if (success) {
         play('place')
-        setToast({ message: '建筑放置成功！XP +10', type: 'success' })
+        const baseXp = 10
+        const totalXp = baseXp + (bonusXp ?? 0)
+        const msg = adjacentToRoad
+          ? `建筑放置成功！XP +${totalXp}（邻路加成 +${bonusXp}）`
+          : `建筑放置成功！XP +${totalXp}`
+        setToast({ message: msg, type: 'success' })
       } else {
         const msg = reason ? (PLACEMENT_ERROR_MESSAGES[reason] ?? '放置失败') : '放置失败'
         setToast({ message: msg, type: 'error' })
@@ -99,6 +123,43 @@ function GamePage() {
         setToast({ message: '道路铺设成功！XP +5', type: 'success' })
       } else {
         const msg = reason ? (PAVE_ERROR_MESSAGES[reason] ?? '铺设失败') : '铺设失败'
+        setToast({ message: msg, type: 'error' })
+      }
+      setTimeout(() => setToast(null), 2500)
+    },
+    [play]
+  )
+
+  // 拆除结果回调
+  const onDemolishResult = useCallback(
+    (success: boolean, reason?: string, refundedFuel?: number, buildingName?: string) => {
+      if (success) {
+        play('place')
+        const fuelMsg = refundedFuel && refundedFuel > 0 ? ` · 返还 ⛽${refundedFuel}` : ''
+        setToast({
+          message: `已拆除${buildingName ? ' ' + buildingName : ''}${fuelMsg}`,
+          type: 'success',
+        })
+      } else {
+        const msg = reason ? (DEMOLISH_ERROR_MESSAGES[reason] ?? '拆除失败') : '拆除失败'
+        setToast({ message: msg, type: 'error' })
+      }
+      setTimeout(() => setToast(null), 2500)
+    },
+    [play]
+  )
+
+  // 移动结果回调
+  const onMoveResult = useCallback(
+    (success: boolean, reason?: string, buildingName?: string) => {
+      if (success) {
+        play('place')
+        setToast({
+          message: `已移动${buildingName ? ' ' + buildingName : ''}到新位置`,
+          type: 'success',
+        })
+      } else {
+        const msg = reason ? (MOVE_ERROR_MESSAGES[reason] ?? '移动失败') : '移动失败'
         setToast({ message: msg, type: 'error' })
       }
       setTimeout(() => setToast(null), 2500)
@@ -132,6 +193,13 @@ function GamePage() {
         </Link>
         <h1 className="font-display text-base text-accent-orange md:text-xl">喵星复兴计划</h1>
         <div className="flex items-center gap-2">
+          <Link
+            to="/stats"
+            className="rounded-lg border border-border-subtle px-2 py-1 text-xs text-text-secondary transition-colors hover:text-accent-lavender"
+            title="专注统计"
+          >
+            📊 统计
+          </Link>
           <button
             onClick={toggleMute}
             className="rounded-lg border border-border-subtle px-2 py-1 text-xs text-text-secondary transition-colors hover:text-text-primary"
@@ -155,15 +223,33 @@ function GamePage() {
           <MapView
             placementBuildingType={selectedBuildingType}
             pavingRoadType={selectedRoadType}
+            demolishMode={demolishMode}
+            moveMode={moveMode}
             onPlacementResult={onPlacementResult}
             onPaveResult={onPaveResult}
+            onDemolishResult={onDemolishResult}
+            onMoveResult={onMoveResult}
           />
 
-          {/* 放置/铺路模式提示 */}
-          {(selectedBuildingType || selectedRoadType) && (
+          {/* 放置/铺路/拆除/移动模式提示 */}
+          {(selectedBuildingType || selectedRoadType || demolishMode || moveMode) && (
             <div className="pointer-events-none absolute top-4 left-1/2 -translate-x-1/2 rounded-lg bg-bg-deep/80 px-4 py-2 backdrop-blur-sm">
-              <p className="text-sm text-accent-mint">
-                {selectedRoadType ? '点击地图铺设道路 · ESC 取消' : '点击地图放置 · ESC 取消'}
+              <p
+                className={`text-sm ${
+                  demolishMode
+                    ? 'text-red-400'
+                    : moveMode
+                      ? 'text-blue-400'
+                      : 'text-accent-mint'
+                }`}
+              >
+                {demolishMode
+                  ? '点击建筑拆除 · ESC 取消'
+                  : moveMode
+                    ? '点击建筑选中 → 点击空地移动 · ESC 取消'
+                    : selectedRoadType
+                      ? '点击地图铺设道路 · ESC 取消'
+                      : '点击地图放置 · ESC 取消'}
               </p>
             </div>
           )}
@@ -232,6 +318,10 @@ function GamePage() {
             onSelect={setSelectedBuildingType}
             selectedRoadType={selectedRoadType}
             onPaveSelect={setSelectedRoadType}
+            demolishMode={demolishMode}
+            onDemolishToggle={setDemolishMode}
+            moveMode={moveMode}
+            onMoveToggle={setMoveMode}
           />
         </aside>
       </div>
@@ -272,6 +362,16 @@ function GamePage() {
               selectedRoadType={selectedRoadType}
               onPaveSelect={(r) => {
                 setSelectedRoadType(r)
+                setMobilePanelOpen(false)
+              }}
+              demolishMode={demolishMode}
+              onDemolishToggle={(enabled) => {
+                setDemolishMode(enabled)
+                setMobilePanelOpen(false)
+              }}
+              moveMode={moveMode}
+              onMoveToggle={(enabled) => {
+                setMoveMode(enabled)
                 setMobilePanelOpen(false)
               }}
             />

@@ -13,6 +13,10 @@ export type PomodoroSessionStatus = 'running' | 'paused' | 'completed' | 'abando
 export interface PomodoroReward {
   fuel: number
   xp: number
+  /** 邻路建筑加成 XP（迭代2：每个邻路建筑额外产出） */
+  roadBonusXp?: number
+  /** 触发加成的邻路建筑数量 */
+  roadBonusBuildings?: number
 }
 
 /**
@@ -53,6 +57,20 @@ export const POMODORO_CONFIG = {
   /** 历史记录保留条数 */
   HISTORY_LIMIT: 100,
 } as const
+
+/** 番茄钟预设时长选项（分钟） */
+export const POMODORO_DURATION_PRESETS = [15, 25, 45] as const
+
+/** 最小/最大自定义时长（分钟） */
+export const POMODORO_DURATION_MIN = 5
+export const POMODORO_DURATION_MAX = 120
+
+/**
+ * 将分钟数转换为毫秒
+ */
+export function minutesToMs(minutes: number): number {
+  return minutes * 60 * 1000
+}
 
 /**
  * 计算剩余时间（ms）

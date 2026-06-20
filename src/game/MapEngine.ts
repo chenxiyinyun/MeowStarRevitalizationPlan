@@ -76,6 +76,14 @@ export class MapEngine {
   private placementMode: string | null = null
   // 铺路模式（道路类型 ID）
   private pavingMode: string | null = null
+  // 拆除模式（布尔，与其他模式互斥）
+  private demolishMode: boolean = false
+  // 移动模式（布尔，与其他模式互斥）
+  private moveMode: boolean = false
+  // 移动模式选中的建筑（第一步选中，第二步选目标位置）
+  private moveSelectedBuilding: { x: number; y: number; buildingId: string } | null = null
+  // 移动完成回调
+  private onMoveComplete: ((fromX: number, fromY: number, toX: number, toY: number) => void) | null = null
   private onTileClick: TileClickCallback | null = null
 
   // 拖拽与缩放状态
@@ -660,9 +668,10 @@ export class MapEngine {
     this.placementMode = buildingTypeId
     this.onTileClick = onTileClick ?? null
 
-    // 建筑放置与铺路互斥
+    // 建筑放置与铺路/拆除互斥
     if (buildingTypeId) {
       this.pavingMode = null
+      this.demolishMode = false
     }
 
     if (!buildingTypeId) {
@@ -679,9 +688,10 @@ export class MapEngine {
     this.pavingMode = roadTypeId
     this.onTileClick = onTileClick ?? null
 
-    // 铺路与建筑放置互斥
+    // 铺路与建筑放置/拆除互斥
     if (roadTypeId) {
       this.placementMode = null
+      this.demolishMode = false
     }
 
     if (!roadTypeId) {
@@ -693,9 +703,93 @@ export class MapEngine {
     }
   }
 
-  /** 更新放置/铺路预览（跟随鼠标位置） */
+  /** 进入/退出拆除模式 */
+  setDemolishMode(enabled: boolean, onTileClick?: TileClickCallback): void {
+    this.demolishMode = enabled
+    this.onTileClick = onTileClick ?? null
+
+    // 拆除与建筑放置/铺路/移动互斥
+    if (enabled) {
+      this.placementMode = null
+      this.pavingMode = null
+      this.moveMode = false
+      this.moveSelectedBuilding = null
+    }
+
+    if (!enabled) {
+      // 退出拆除模式，清除预览
+      if (this.previewGraphics) {
+        this.previewLayer.removeChildren()
+        this.previewGraphics = null
+      }
+    }
+  }
+
+  /** 进入/退出移动模式 */
+  setMoveMode(
+    enabled: boolean,
+    onMoveComplete?: (fromX: number, fromY: number, toX: number, toY: number) => void
+  ): void {
+    this.moveMode = enabled
+    this.onMoveComplete = onMoveComplete ?? null
+    this.moveSelectedBuilding = null
+
+    // 移动与建筑放置/铺路/拆除互斥
+    if (enabled) {
+      this.placementMode = null
+      this.pavingMode = null
+      this.demolishMode = false
+    }
+
+    if (!enabled) {
+      // 退出移动模式，清除预览
+      if (this.previewGraphics) {
+        this.previewLayer.removeChildren()
+        this.previewGraphics = null
+      }
+    }
+  }
+
+  /** 移动模式点击处理（两步交互：选中建筑 → 选目标位置） */
+  private handleMoveClick(gx: number, gy: number): void {
+    if (gx < 0 || gx >= this.gridWidth || gy < 0 || gy >= this.gridHeight) return
+
+    const tile = this.tiles[gy]?.[gx]
+    if (!tile) return
+
+    if (!this.moveSelectedBuilding) {
+      // 第一步：选中建筑（需有建筑且已解锁）
+      if (tile.buildingId && tile.unlocked) {
+        this.moveSelectedBuilding = { x: gx, y: gy, buildingId: tile.buildingId }
+      }
+    } else {
+      const fromX = this.moveSelectedBuilding.x
+      const fromY = this.moveSelectedBuilding.y
+
+      // 点击同一位置：取消选中
+      if (gx === fromX && gy === fromY) {
+        this.moveSelectedBuilding = null
+        this.clearPreview()
+        return
+      }
+
+      // 点击其他建筑：切换选中
+      if (tile.buildingId && tile.unlocked) {
+        this.moveSelectedBuilding = { x: gx, y: gy, buildingId: tile.buildingId }
+        return
+      }
+
+      // 点击空地：尝试移动
+      this.onMoveComplete?.(fromX, fromY, gx, gy)
+      // 移动后清除选中（外部通过 updateBuildings 刷新渲染）
+      this.moveSelectedBuilding = null
+      this.clearPreview()
+    }
+  }
+
+  /** 更新放置/铺路/拆除/移动预览（跟随鼠标位置） */
   private updatePreview(canvasX: number, canvasY: number): void {
-    if (!this.placementMode && !this.pavingMode) return
+    if (!this.placementMode && !this.pavingMode && !this.demolishMode && !this.moveMode) return
 
     // 屏幕坐标 → 世界坐标 → 网格坐标
     const zoom = this.worldContainer.scale.x
@@ -705,21 +799,43 @@ export class MapEngine {
 
     const tile = this.tiles[gy]?.[gx]
 
-    // 根据模式判断可放置性
-    let canPlace = false
-    let previewColor = 0x6ee7b7 // 默认绿色（可放置）
+    // 根据模式判断可操作性
+    let canAct = false
+    let previewColor = 0x6ee7b7 // 默认绿色（可放置/可拆除）
 
     if (this.placementMode) {
       // 建筑放置：需解锁、无建筑
       const buildingType = getBuildingType(this.placementMode)
       if (!buildingType) return
-      canPlace = !!tile && tile.unlocked && !tile.buildingId
+      canAct = !!tile && tile.unlocked && !tile.buildingId
     } else if (this.pavingMode) {
       // 铺路：需解锁、非水面（允许在已有道路上升级）
       const roadType = getRoadType(this.pavingMode)
       if (!roadType) return
-      canPlace = !!tile && tile.unlocked && tile.terrain !== 'water'
+      canAct = !!tile && tile.unlocked && tile.terrain !== 'water'
       previewColor = roadType.color
+    } else if (this.demolishMode) {
+      // 拆除：需有建筑才能拆除（红色表示不可拆，绿色表示可拆）
+      canAct = !!tile && !!tile.buildingId
+      previewColor = 0xef5350 // 拆除模式用红色高亮
+    } else if (this.moveMode) {
+      // 移动模式
+      if (!this.moveSelectedBuilding) {
+        // 第一步：选中建筑（需有建筑且已解锁）
+        canAct = !!tile && !!tile.buildingId && tile.unlocked
+        previewColor = 0x60a5fa // 蓝色表示可选中
+      } else {
+        // 第二步：选择目标位置
+        const isSamePos =
+          gx === this.moveSelectedBuilding.x && gy === this.moveSelectedBuilding.y
+        canAct =
+          !!tile &&
+          tile.unlocked &&
+          !tile.buildingId &&
+          tile.terrain !== 'water' &&
+          !isSamePos
+        previewColor = canAct ? 0x6ee7b7 : 0xef5350
+      }
     }
 
     // 清除旧预览
@@ -730,7 +846,21 @@ export class MapEngine {
     const h = this.tileSize.h
 
     const g = new Graphics()
-    const color = canPlace ? previewColor : 0xef5350
+    // 拆除模式：可拆用红色实心高亮，不可拆用半透明灰
+    // 移动模式（未选中）：可选中用蓝色，不可选中用半透明灰
+    // 移动模式（已选中）：可移动用绿色，不可移动用红色
+    // 其他模式：可操作用对应颜色，不可操作用红色
+    const color = this.demolishMode
+      ? canAct
+        ? 0xef5350
+        : 0x6b7280
+      : this.moveMode && !this.moveSelectedBuilding
+        ? canAct
+          ? 0x60a5fa
+          : 0x6b7280
+        : canAct
+          ? previewColor
+          : 0xef5350
     const alpha = 0.4
 
     // 绘制高亮菱形
@@ -739,7 +869,7 @@ export class MapEngine {
     g.stroke({ color, width: 2, alpha: 1 })
 
     // 建筑放置模式下，绘制建筑预览轮廓
-    if (canPlace && this.placementMode) {
+    if (canAct && this.placementMode) {
       const buildingType = getBuildingType(this.placementMode)
       if (buildingType && buildingType.height > 2) {
         g.poly([
@@ -753,6 +883,50 @@ export class MapEngine {
           sy + h / 2 - buildingType.height,
         ])
         g.stroke({ color, width: 1, alpha: 0.6 })
+      }
+    }
+
+    // 拆除模式下，绘制 X 标记
+    if (this.demolishMode && canAct) {
+      const centerX = sx
+      const centerY = sy + h / 2
+      const size = Math.min(w, h) * 0.2
+      g.moveTo(centerX - size, centerY - size)
+      g.lineTo(centerX + size, centerY + size)
+      g.moveTo(centerX + size, centerY - size)
+      g.lineTo(centerX - size, centerY + size)
+      g.stroke({ color: 0xffffff, width: 2, alpha: 0.9 })
+    }
+
+    // 移动模式下，绘制选中建筑的高亮标记和移动指示
+    if (this.moveMode && this.moveSelectedBuilding) {
+      const { sx: selSx, sy: selSy } = gridToScreen(
+        this.moveSelectedBuilding.x,
+        this.moveSelectedBuilding.y,
+        this.tileSize
+      )
+      // 选中建筑的蓝色脉冲边框
+      g.poly([
+        selSx,
+        selSy,
+        selSx + w / 2,
+        selSy + h / 2,
+        selSx,
+        selSy + h,
+        selSx - w / 2,
+        selSy + h / 2,
+      ])
+      g.stroke({ color: 0x60a5fa, width: 3, alpha: 1 })
+
+      // 如果目标位置有效，绘制从源到目标的连线
+      if (canAct) {
+        const fromCenterX = selSx
+        const fromCenterY = selSy + h / 2
+        const toCenterX = sx
+        const toCenterY = sy + h / 2
+        g.moveTo(fromCenterX, fromCenterY)
+        g.lineTo(toCenterX, toCenterY)
+        g.stroke({ color: 0x6ee7b7, width: 2, alpha: 0.6 })
       }
     }
 
@@ -835,8 +1009,8 @@ export class MapEngine {
       this.updateViewport()
     }
 
-    // 放置/铺路模式下更新预览
-    if ((this.placementMode || this.pavingMode) && !this.isPinching) {
+    // 放置/铺路/拆除/移动模式下更新预览
+    if ((this.placementMode || this.pavingMode || this.demolishMode || this.moveMode) && !this.isPinching) {
       const pt = this.getCanvasPoint(e)
       this.updatePreview(pt.x, pt.y)
     }
@@ -852,14 +1026,17 @@ export class MapEngine {
       const zoom = this.worldContainer.scale.x
       const worldX = (pt.x - this.worldContainer.x) / zoom
       const worldY = (pt.y - this.worldContainer.y) / zoom
+      const { gx, gy } = screenToGrid(worldX, worldY, this.tileSize)
 
-      if ((this.placementMode || this.pavingMode) && this.onTileClick) {
-        const { gx, gy } = screenToGrid(worldX, worldY, this.tileSize)
+      if (this.moveMode) {
+        // 移动模式：两步交互（选中建筑 → 选目标位置）
+        this.handleMoveClick(gx, gy)
+      } else if ((this.placementMode || this.pavingMode || this.demolishMode) && this.onTileClick) {
         if (gx >= 0 && gx < this.gridWidth && gy >= 0 && gy < this.gridHeight) {
           this.onTileClick(gx, gy)
         }
-      } else if (!this.placementMode && !this.pavingMode) {
-        // 非放置/铺路模式：检测猫咪点击
+      } else if (!this.placementMode && !this.pavingMode && !this.demolishMode) {
+        // 非放置/铺路/拆除模式：检测猫咪点击
         this.handleCatClick(worldX, worldY)
       }
     }
@@ -882,7 +1059,7 @@ export class MapEngine {
 
   private onPointerLeave = (): void => {
     // 鼠标离开 canvas 时清除预览
-    if (this.placementMode || this.pavingMode) {
+    if (this.placementMode || this.pavingMode || this.demolishMode || this.moveMode) {
       this.clearPreview()
     }
   }

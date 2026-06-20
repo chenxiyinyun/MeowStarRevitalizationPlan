@@ -26,6 +26,8 @@ export interface UserSettings {
   musicEnabled: boolean
   reducedMotion: boolean // 尊重 prefers-reduced-motion
   notificationEnabled: boolean // Web Notification 开关
+  /** 番茄钟专注时长（分钟），默认 25 */
+  pomodoroDurationMin: number
 }
 
 /**
@@ -75,4 +77,5 @@ export const DEFAULT_SETTINGS: UserSettings = {
   musicEnabled: true,
   reducedMotion: false,
   notificationEnabled: true,
+  pomodoroDurationMin: 25,
 }

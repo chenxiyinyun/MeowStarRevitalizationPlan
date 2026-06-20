@@ -11,8 +11,8 @@ interface UserStore {
   settings: UserSettings
   /** 初始化用户档案（首次进入生成 userId） */
   initProfile: () => UserProfile
-  /** 从存档恢复 */
-  hydrate: (profile: UserProfile, settings: UserSettings) => void
+  /** 从存档恢复（合并默认值，兼容旧存档缺少字段） */
+  hydrate: (profile: UserProfile, settings: Partial<UserSettings>) => void
   /** 更新昵称 */
   setNickname: (nickname: string) => void
   /** 更新最近活跃时间 */
@@ -47,7 +47,8 @@ export const useUserStore = create<UserStore>((set, get) => ({
     return profile
   },
 
-  hydrate: (profile, settings) => set({ profile, settings: { ...settings } }),
+  hydrate: (profile, settings) =>
+    set({ profile, settings: { ...DEFAULT_SETTINGS, ...settings } }),
 
   setNickname: (nickname) => {
     const profile = get().profile

@@ -10,8 +10,19 @@
  */
 import { create } from 'zustand'
 import type { PomodoroSession, PomodoroState, PomodoroReward } from '@/types'
-import { POMODORO_CONFIG, getRemainingMs } from '@/types'
+import {
+  POMODORO_CONFIG,
+  getRemainingMs,
+  ADJACENT_ROAD_XP_PER_BUILDING,
+  minutesToMs,
+  POMODORO_DURATION_MIN,
+  POMODORO_DURATION_MAX,
+} from '@/types'
+import { countAdjacentRoadBuildings } from '@/game/data/roads'
 import { useProgressStore } from './progressStore'
+import { useMapStore } from './mapStore'
+import { useBuildingStore } from './buildingStore'
+import { useUserStore } from './userStore'
 
 interface PomodoroStore extends PomodoroState {
   /** 历史会话记录（最近 100 条） */
@@ -40,12 +51,17 @@ function generateSessionId(): string {
   return `pomo_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
 }
 
-/** 创建新会话 */
+/** 创建新会话（使用用户自定义时长，默认 25 分钟） */
 function createSession(): PomodoroSession {
+  const settings = useUserStore.getState().settings
+  const durationMin = Math.min(
+    Math.max(settings.pomodoroDurationMin ?? 25, POMODORO_DURATION_MIN),
+    POMODORO_DURATION_MAX
+  )
   return {
     id: generateSessionId(),
     startedAt: Date.now(),
-    durationMs: POMODORO_CONFIG.DURATION_MS,
+    durationMs: minutesToMs(durationMin),
     status: 'running',
     accumulatedPausedMs: 0,
   }
@@ -67,6 +83,26 @@ function abandonSession(session: PomodoroSession): PomodoroSession {
     ...session,
     status: 'abandoned',
     abandonedAt: Date.now(),
+  }
+}
+
+/**
+ * 计算邻路建筑 XP 加成（迭代2）
+ * 统计所有邻路建筑数量，每个额外产出 ADJACENT_ROAD_XP_PER_BUILDING XP
+ * @returns { bonusXp, buildingCount } 加成 XP 和邻路建筑数
+ */
+function computeRoadBonus(): { bonusXp: number; buildingCount: number } {
+  const mapState = useMapStore.getState()
+  const buildingState = useBuildingStore.getState()
+  const count = countAdjacentRoadBuildings(
+    mapState.tiles,
+    buildingState.buildings,
+    mapState.gridWidth,
+    mapState.gridHeight
+  )
+  return {
+    bonusXp: count * ADJACENT_ROAD_XP_PER_BUILDING,
+    buildingCount: count,
   }
 }
 
@@ -129,13 +165,21 @@ export const usePomodoroStore = create<PomodoroStore>((set, get) => ({
     if (remaining > 0) return false
 
     // 倒计时归零，完成会话
-    const reward = POMODORO_CONFIG.REWARD
+    const baseReward = POMODORO_CONFIG.REWARD
+    // 邻路加成：每个邻路建筑额外产出 XP
+    const roadBonus = computeRoadBonus()
+    const reward: PomodoroReward = {
+      fuel: baseReward.fuel,
+      xp: baseReward.xp,
+      roadBonusXp: roadBonus.bonusXp || undefined,
+      roadBonusBuildings: roadBonus.buildingCount || undefined,
+    }
     const completed = completeSession(current, reward)
 
-    // 发放奖励（M1-4）
+    // 发放奖励（基础 + 邻路加成）
     const progressStore = useProgressStore.getState()
     progressStore.addFuel(reward.fuel)
-    const xpResult = progressStore.addXp(reward.xp)
+    const xpResult = progressStore.addXp(reward.xp + roadBonus.bonusXp)
     progressStore.recordPomodoroCompleted(current.durationMs / 1000 / 60)
 
     set((state) => ({
@@ -159,11 +203,18 @@ export const usePomodoroStore = create<PomodoroStore>((set, get) => ({
       const remaining = getRemainingMs(current)
       if (remaining <= 0) {
         // 后台已到时，直接完成
-        const reward = POMODORO_CONFIG.REWARD
+        const baseReward = POMODORO_CONFIG.REWARD
+        const roadBonus = computeRoadBonus()
+        const reward: PomodoroReward = {
+          fuel: baseReward.fuel,
+          xp: baseReward.xp,
+          roadBonusXp: roadBonus.bonusXp || undefined,
+          roadBonusBuildings: roadBonus.buildingCount || undefined,
+        }
         const completed = completeSession(current, reward)
         const progressStore = useProgressStore.getState()
         progressStore.addFuel(reward.fuel)
-        const xpResult = progressStore.addXp(reward.xp)
+        const xpResult = progressStore.addXp(reward.xp + roadBonus.bonusXp)
         progressStore.recordPomodoroCompleted(current.durationMs / 1000 / 60)
         set({
           phase: 'completed',

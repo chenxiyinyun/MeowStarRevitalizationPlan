@@ -12,12 +12,18 @@
  */
 import { usePomodoroStore } from '@/store/pomodoroStore'
 import { useProgressStore } from '@/store/progressStore'
+import { useUserStore } from '@/store/userStore'
 import { usePomodoroTick } from '@/hooks/usePomodoroTick'
 import { useVisibilityCalibration } from '@/hooks/useVisibilityCalibration'
 import { usePomodoroCompletionNotification } from '@/hooks/useNotification'
 import { useSound } from '@/hooks/useSound'
 import { formatMsToMMSS } from '@/utils/time'
 import { getLevelProgress } from '@/utils/level'
+import {
+  POMODORO_DURATION_PRESETS,
+  POMODORO_DURATION_MIN,
+  POMODORO_DURATION_MAX,
+} from '@/types'
 import CircularProgress from './CircularProgress'
 import CompletionModal from './CompletionModal'
 
@@ -28,6 +34,10 @@ export default function PomodoroTimer() {
   const resume = usePomodoroStore((s) => s.resume)
   const reset = usePomodoroStore((s) => s.reset)
   const { play } = useSound()
+
+  // 用户设置中的番茄钟时长
+  const pomodoroDurationMin = useUserStore((s) => s.settings.pomodoroDurationMin)
+  const updateSettings = useUserStore((s) => s.updateSettings)
 
   // 状态栏数据
   const fuel = useProgressStore((s) => s.fuel)
@@ -106,6 +116,60 @@ export default function PomodoroTimer() {
           dimmed={isPaused}
         />
 
+        {/* 时长选择（仅 idle 阶段显示） */}
+        {phase === 'idle' && (
+          <div className="mt-6 flex flex-col items-center gap-2">
+            <span className="text-xs text-text-dim">专注时长</span>
+            <div className="flex gap-2">
+              {POMODORO_DURATION_PRESETS.map((min) => (
+                <button
+                  key={min}
+                  onClick={() => {
+                    play('click')
+                    updateSettings({ pomodoroDurationMin: min })
+                  }}
+                  className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-all ${
+                    pomodoroDurationMin === min
+                      ? 'bg-accent-orange text-white'
+                      : 'border border-border-subtle bg-bg-card text-text-secondary hover:border-accent-orange/50 hover:text-text-primary'
+                  }`}
+                >
+                  {min} 分钟
+                </button>
+              ))}
+              <label
+                className={`flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium transition-all ${
+                  !POMODORO_DURATION_PRESETS.includes(pomodoroDurationMin as 15 | 25 | 45)
+                    ? 'bg-accent-orange text-white'
+                    : 'border border-border-subtle bg-bg-card text-text-secondary hover:border-accent-orange/50 hover:text-text-primary'
+                }`}
+                title={`自定义 ${POMODORO_DURATION_MIN}-${POMODORO_DURATION_MAX} 分钟`}
+              >
+                <span>自定义</span>
+                <input
+                  type="number"
+                  min={POMODORO_DURATION_MIN}
+                  max={POMODORO_DURATION_MAX}
+                  value={pomodoroDurationMin}
+                  onChange={(e) => {
+                    const v = parseInt(e.target.value, 10)
+                    if (Number.isFinite(v)) {
+                      const clamped = Math.min(
+                        Math.max(v, POMODORO_DURATION_MIN),
+                        POMODORO_DURATION_MAX
+                      )
+                      updateSettings({ pomodoroDurationMin: clamped })
+                    }
+                  }}
+                  className="w-12 bg-transparent text-center outline-none"
+                  style={{ color: 'inherit' }}
+                />
+                <span className="text-xs">分</span>
+              </label>
+            </div>
+          </div>
+        )}
+
         {/* 控制按钮 */}
         <div className="mt-8 flex gap-3">
           {phase === 'idle' && (
@@ -171,7 +235,9 @@ export default function PomodoroTimer() {
 
         {/* 提示文案 */}
         {phase === 'idle' && (
-          <p className="mt-4 text-sm text-text-dim">完成 25 分钟专注，获得 3 燃料与 50 经验值</p>
+          <p className="mt-4 text-sm text-text-dim">
+            完成 {pomodoroDurationMin} 分钟专注，获得 3 燃料与 50 经验值
+          </p>
         )}
         {isActive && (
           <p className="mt-4 text-sm text-text-dim">切到其他标签页也不影响计时，回来会自动校准</p>

@@ -133,3 +133,45 @@ export function getRoadShape(neighbors: RoadNeighbors): RoadShape {
   const opposite = (neighbors.n && neighbors.s) || (neighbors.e && neighbors.w)
   return opposite ? 'straight' : 'turn'
 }
+
+// ─── 邻路加成（迭代2） ───────────────────────────────────
+
+/**
+ * 检查指定瓦片是否相邻于道路（4方向任意一个为 road 即算邻路）
+ * 用于建筑放置时的 XP 加成判断
+ */
+export function isAdjacentToRoad(
+  tiles: TileData[][],
+  x: number,
+  y: number,
+  gridWidth: number,
+  gridHeight: number
+): boolean {
+  const neighbors = getRoadNeighbors(tiles, x, y, gridWidth, gridHeight)
+  return neighbors.n || neighbors.e || neighbors.s || neighbors.w
+}
+
+/**
+ * 统计所有相邻于道路的建筑数量（用于番茄钟完成时的 XP 加成）
+ * 遍历所有建筑，检查其所在瓦片是否邻路
+ *
+ * @param tiles 瓦片二维数组
+ * @param buildings 建筑实例列表
+ * @param gridWidth 地图宽
+ * @param gridHeight 地图高
+ * @returns 邻路建筑数量
+ */
+export function countAdjacentRoadBuildings(
+  tiles: TileData[][],
+  buildings: { x: number; y: number }[],
+  gridWidth: number,
+  gridHeight: number
+): number {
+  let count = 0
+  for (const building of buildings) {
+    if (isAdjacentToRoad(tiles, building.x, building.y, gridWidth, gridHeight)) {
+      count++
+    }
+  }
+  return count
+}

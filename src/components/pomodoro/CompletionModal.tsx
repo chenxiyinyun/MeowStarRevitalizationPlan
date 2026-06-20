@@ -65,10 +65,22 @@ export default function CompletionModal() {
             </div>
             <div className="flex flex-col items-center rounded-xl bg-bg-card px-6 py-4">
               <span className="text-3xl">✨</span>
-              <span className="mt-1 text-2xl font-bold text-accent-lavender">+{lastReward.xp}</span>
+              <span className="mt-1 text-2xl font-bold text-accent-lavender">
+                +{lastReward.xp + (lastReward.roadBonusXp ?? 0)}
+              </span>
               <span className="text-xs text-text-secondary">经验值</span>
             </div>
           </div>
+
+          {/* 邻路加成明细（迭代2） */}
+          {lastReward.roadBonusXp && lastReward.roadBonusXp > 0 && (
+            <div className="mt-3 rounded-xl border border-accent-mint/30 bg-accent-mint/10 px-4 py-2">
+              <p className="text-sm text-accent-mint">
+                🏙️ 邻路加成：{lastReward.roadBonusBuildings} 栋沿街建筑 · XP +
+                {lastReward.roadBonusXp}
+              </p>
+            </div>
+          )}
 
           {/* 升级提示 */}
           {lastLevelUp && (

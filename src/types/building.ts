@@ -61,12 +61,34 @@ export const PLACE_BUILDING_XP = 10
 /** 铺设道路获得 XP */
 export const PAVE_ROAD_XP = 5
 
-/** 放置校验结果 */
+/** 邻路加成比例（建筑邻路时放置 XP +20%） */
+export const ADJACENT_ROAD_BONUS_RATE = 0.2
+
+/** 番茄钟完成时每个邻路建筑额外产出 XP */
+export const ADJACENT_ROAD_XP_PER_BUILDING = 5
+
+/** 拆除建筑返还燃料比例（50%） */
+export const DEMOLISH_FUEL_REFUND_RATE = 0.5
+
+/** 放置校验结果（成功时携带邻路加成信息） */
 export type PlacementResult =
-  | { ok: true }
+  | { ok: true; bonusXp?: number; adjacentToRoad?: boolean }
   | {
       ok: false
       reason: 'locked' | 'occupied' | 'no_fuel' | 'locked_building' | 'out_of_bounds' | 'water'
+    }
+
+/** 拆除校验结果（成功时携带返还燃料数量） */
+export type DemolishResult =
+  | { ok: true; refundedFuel: number; buildingName: string }
+  | { ok: false; reason: 'no_building' | 'out_of_bounds' }
+
+/** 移动校验结果（成功时携带建筑名称） */
+export type MoveResult =
+  | { ok: true; buildingName: string }
+  | {
+      ok: false
+      reason: 'no_building' | 'out_of_bounds' | 'locked' | 'occupied' | 'water'
     }
 
 // ─── 道路类型（独立于建筑系统，作为地形铺设） ───────────────

@@ -23,6 +23,14 @@ interface BuildingPanelProps {
   selectedRoadType?: string | null
   /** 选择道路类型时触发（进入铺路模式） */
   onPaveSelect?: (roadTypeId: string | null) => void
+  /** 是否处于拆除模式 */
+  demolishMode?: boolean
+  /** 切换拆除模式 */
+  onDemolishToggle?: (enabled: boolean) => void
+  /** 是否处于移动模式 */
+  moveMode?: boolean
+  /** 切换移动模式 */
+  onMoveToggle?: (enabled: boolean) => void
 }
 
 export default function BuildingPanel({
@@ -30,6 +38,10 @@ export default function BuildingPanel({
   onSelect,
   selectedRoadType,
   onPaveSelect,
+  demolishMode,
+  onDemolishToggle,
+  moveMode,
+  onMoveToggle,
 }: BuildingPanelProps) {
   const [activeCategory, setActiveCategory] = useState<BuildingCategory | 'all'>('all')
   const level = useProgressStore((s) => s.level)
@@ -45,20 +57,44 @@ export default function BuildingPanel({
 
   const handleSelectBuilding = (typeId: string) => {
     play('click')
-    // 选择建筑时清空道路选择（互斥）
+    // 选择建筑时清空道路/移动选择（互斥）
     if (selectedRoadType && onPaveSelect) {
       onPaveSelect(null)
     }
+    if (moveMode) onMoveToggle?.(false)
     onSelect(selectedBuildingType === typeId ? null : typeId)
   }
 
   const handleSelectRoad = (roadTypeId: string) => {
     play('click')
-    // 选择道路时清空建筑选择（互斥）
+    // 选择道路时清空建筑/移动选择（互斥）
     if (selectedBuildingType) {
       onSelect(null)
     }
+    if (moveMode) onMoveToggle?.(false)
     onPaveSelect?.(selectedRoadType === roadTypeId ? null : roadTypeId)
+  }
+
+  const handleToggleDemolish = () => {
+    play('click')
+    // 进入拆除模式时清空建筑/道路/移动选择（互斥）
+    if (!demolishMode) {
+      if (selectedBuildingType) onSelect(null)
+      if (selectedRoadType) onPaveSelect?.(null)
+      if (moveMode) onMoveToggle?.(false)
+    }
+    onDemolishToggle?.(!demolishMode)
+  }
+
+  const handleToggleMove = () => {
+    play('click')
+    // 进入移动模式时清空建筑/道路/拆除选择（互斥）
+    if (!moveMode) {
+      if (selectedBuildingType) onSelect(null)
+      if (selectedRoadType) onPaveSelect?.(null)
+      if (demolishMode) onDemolishToggle?.(false)
+    }
+    onMoveToggle?.(!moveMode)
   }
 
   return (
@@ -66,9 +102,33 @@ export default function BuildingPanel({
       {/* 标题 */}
       <div className="flex items-center justify-between border-b border-border-subtle px-4 py-3">
         <h2 className="font-display text-lg text-text-primary">建筑</h2>
-        <div className="flex items-center gap-1.5">
-          <span className="text-sm">⛽</span>
-          <span className="font-bold text-accent-orange">{fuel}</span>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
+            <span className="text-sm">⛽</span>
+            <span className="font-bold text-accent-orange">{fuel}</span>
+          </div>
+          <button
+            onClick={handleToggleMove}
+            className={`rounded-lg px-2 py-1 text-xs font-medium transition-colors ${
+              moveMode
+                ? 'bg-blue-500 text-white'
+                : 'border border-border-subtle text-text-secondary hover:text-blue-400'
+            }`}
+            title={moveMode ? '退出移动模式' : '移动模式'}
+          >
+            {moveMode ? '✕ 退出移动' : '↔ 移动'}
+          </button>
+          <button
+            onClick={handleToggleDemolish}
+            className={`rounded-lg px-2 py-1 text-xs font-medium transition-colors ${
+              demolishMode
+                ? 'bg-red-500 text-white'
+                : 'border border-border-subtle text-text-secondary hover:text-red-400'
+            }`}
+            title={demolishMode ? '退出拆除模式' : '拆除模式'}
+          >
+            {demolishMode ? '✕ 退出拆除' : '🔧 拆除'}
+          </button>
         </div>
       </div>
 
@@ -116,13 +176,17 @@ export default function BuildingPanel({
         </div>
       </div>
 
-      {/* 放置/铺路提示 */}
-      {(selectedBuildingType || selectedRoadType) && (
+      {/* 放置/铺路/拆除/移动提示 */}
+      {(selectedBuildingType || selectedRoadType || demolishMode || moveMode) && (
         <div className="border-t border-border-subtle px-4 py-2.5">
           <p className="text-xs text-text-secondary">
-            {selectedRoadType
-              ? '点击地图铺设道路 · 再次点击取消选择'
-              : '点击地图放置建筑 · 再次点击取消选择'}
+            {moveMode
+              ? '点击建筑选中 → 点击空地移动 · 再次点击建筑取消'
+              : demolishMode
+                ? '点击地图上的建筑拆除 · 返还 50% 燃料'
+                : selectedRoadType
+                  ? '点击地图铺设道路 · 再次点击取消选择'
+                  : '点击地图放置建筑 · 再次点击取消选择'}
           </p>
         </div>
       )}
