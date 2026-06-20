@@ -1,0 +1,26 @@
+:root {
+  /* 背景与表面 */
+  --bg-deep: #0a0e1a;
+  --bg-card: rgba(255, 255, 255, 0.04);
+  --bg-card-hover: rgba(255, 255, 255, 0.08);
+
+  /* 主色 */
+  --accent-orange: #ff6b35;
+  --accent-coral: #ff8c69;
+  --accent-cream: #fff5e6;
+  --accent-lavender: #c4b5fd;
+  --accent-mint: #6ee7b7;
+  --accent-pink: #f9a8d4;
+
+  /* 文字 */
+  --text-primary: #f8f9fa;
+  --text-secondary: rgba(248, 249, 250, 0.65);
+  --text-dim: rgba(248, 249, 250, 0.35);
+
+  /* 光晕 */
+  --glow-orange: rgba(255, 107, 53, 0.3);
+  --glow-lavender: rgba(196, 181, 253, 0.25);
+
+  /* 边框 */
+  --border-subtle: rgba(255, 255, 255, 0.06);
+}

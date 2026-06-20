@@ -1,0 +1,2497 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>喵星复兴计划 — 用番茄钟养猫建城</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg-deep: #0a0e1a;
+    --bg-card: rgba(255,255,255,0.04);
+    --bg-card-hover: rgba(255,255,255,0.08);
+    --accent-orange: #FF6B35;
+    --accent-coral: #FF8C69;
+    --accent-cream: #FFF5E6;
+    --accent-lavender: #C4B5FD;
+    --accent-mint: #6EE7B7;
+    --accent-pink: #F9A8D4;
+    --text-primary: #F8F9FA;
+    --text-secondary: rgba(248,249,250,0.65);
+    --text-dim: rgba(248,249,250,0.35);
+    --glow-orange: rgba(255,107,53,0.3);
+    --glow-lavender: rgba(196,181,253,0.25);
+    --border-subtle: rgba(255,255,255,0.06);
+    --font-display: 'ZCOOL KuaiLe', cursive;
+    --font-body: 'Noto Sans SC', sans-serif;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    overflow-x: hidden;
+    line-height: 1.7;
+  }
+
+  /* ====== CUSTOM CURSOR ====== */
+  .cursor-dot {
+    position: fixed;
+    width: 8px; height: 8px;
+    background: var(--accent-orange);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 10000;
+    mix-blend-mode: screen;
+    transition: transform 0.15s ease;
+  }
+  .cursor-ring {
+    position: fixed;
+    width: 36px; height: 36px;
+    border: 1.5px solid var(--accent-orange);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 10000;
+    opacity: 0.5;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+  }
+
+  /* ====== NOISE OVERLAY ====== */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* ====== HERO SECTION ====== */
+  .hero {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 2rem;
+    overflow: hidden;
+  }
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+  }
+  .gradient-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.35;
+  }
+  .orb-1 {
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(255,107,53,0.5), transparent 70%);
+    top: -10%; left: -5%;
+  }
+  .orb-2 {
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(196,181,253,0.4), transparent 70%);
+    bottom: -5%; right: -5%;
+  }
+  .orb-3 {
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(255,140,105,0.3), transparent 70%);
+    top: 40%; left: 60%;
+  }
+  .stars-container {
+    position: absolute;
+    inset: 0;
+  }
+  .star {
+    position: absolute;
+    background: #fff;
+    border-radius: 50%;
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 1;
+    max-width: 720px;
+  }
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 100px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+    backdrop-filter: blur(10px);
+  }
+  .hero-badge .dot {
+    width: 8px; height: 8px;
+    background: var(--accent-orange);
+    border-radius: 50%;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+  .hero-title {
+    font-family: var(--font-display);
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    color: var(--accent-cream);
+    margin-bottom: 1rem;
+    line-height: 1.2;
+  }
+  .hero-subtitle {
+    font-size: clamp(1rem, 2vw, 1.25rem);
+    color: var(--text-secondary);
+    margin-bottom: 2.5rem;
+    max-width: 560px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .hero-cta-group {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .btn-primary, .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 32px;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+    font-family: var(--font-body);
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent-orange), var(--accent-coral));
+    color: white;
+    border: none;
+    box-shadow: 0 4px 20px var(--glow-orange);
+  }
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(255,107,53,0.4);
+  }
+  .btn-ghost {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    border: 1px solid var(--border-subtle);
+    backdrop-filter: blur(10px);
+  }
+  .btn-ghost:hover {
+    background: var(--bg-card-hover);
+    border-color: rgba(255,255,255,0.15);
+    transform: translateY(-2px);
+  }
+
+  .hero-cat {
+    position: absolute;
+    bottom: 10%;
+    right: 8%;
+    width: 180px;
+    height: 180px;
+    opacity: 0.6;
+    animation: catFloatHero 6s ease-in-out infinite;
+  }
+  @keyframes catFloatHero {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-15px) rotate(3deg); }
+  }
+
+  .scroll-indicator {
+    position: absolute;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-dim);
+    font-size: 0.8rem;
+    animation: bounce 2s ease-in-out infinite;
+  }
+  .scroll-indicator .mouse {
+    width: 20px; height: 32px;
+    border: 2px solid var(--text-dim);
+    border-radius: 10px;
+    position: relative;
+  }
+  .scroll-indicator .mouse::after {
+    content: '';
+    position: absolute;
+    top: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 3px; height: 6px;
+    background: var(--text-dim);
+    border-radius: 2px;
+    animation: scrollWheel 2s ease-in-out infinite;
+  }
+  @keyframes scrollWheel {
+    0%, 100% { opacity: 1; top: 6px; }
+    50% { opacity: 0.3; top: 14px; }
+  }
+  @keyframes bounce {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(-8px); }
+  }
+
+  /* ====== SECTIONS ====== */
+  .section-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 5rem 2rem;
+  }
+  .section-label {
+    display: inline-block;
+    padding: 6px 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 100px;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .section-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    color: var(--accent-cream);
+    margin-bottom: 0.75rem;
+  }
+  .section-desc {
+    color: var(--text-secondary);
+    font-size: 1.05rem;
+    max-width: 600px;
+    margin-bottom: 3rem;
+  }
+
+  /* ====== PROBLEM SECTION ====== */
+  .problem-section {
+    background: linear-gradient(180deg, var(--bg-deep), #0d1225);
+  }
+  .problem-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+  }
+  .problem-card {
+    padding: 2rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 20px;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+  .problem-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent-orange), var(--accent-coral));
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .problem-card:hover {
+    transform: translateY(-4px);
+    background: var(--bg-card-hover);
+    border-color: rgba(255,255,255,0.1);
+  }
+  .problem-card:hover::before { opacity: 1; }
+  .problem-icon {
+    width: 48px; height: 48px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  .problem-icon.orange { background: rgba(255,107,53,0.15); }
+  .problem-icon.lavender { background: rgba(196,181,253,0.15); }
+  .problem-icon.pink { background: rgba(249,168,212,0.15); }
+  .problem-card h3 {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+    color: var(--accent-cream);
+  }
+  .problem-card p {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.7;
+  }
+
+  /* ====== CONCEPT SECTION ====== */
+  .concept-section {
+    background: linear-gradient(180deg, #0d1225, #111833);
+  }
+  .concept-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+    align-items: center;
+  }
+  .concept-visual {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 320px;
+  }
+  .concept-planet {
+    width: 220px; height: 220px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(255,107,53,0.2), rgba(196,181,253,0.15));
+    position: relative;
+    border: 2px solid rgba(255,255,255,0.08);
+    overflow: hidden;
+  }
+  .planet-building {
+    position: absolute;
+    border-radius: 4px 4px 0 0;
+    bottom: 30%;
+    transition: all 0.5s;
+  }
+  .pb-1 { left: 15%; width: 25px; height: 35px; background: var(--accent-orange); }
+  .pb-2 { left: 35%; width: 30px; height: 50px; background: var(--accent-lavender); bottom: 25%; }
+  .pb-3 { left: 55%; width: 22px; height: 30px; background: var(--accent-mint); }
+  .pb-4 { left: 70%; width: 28px; height: 42px; background: var(--accent-pink); bottom: 28%; }
+  .pb-5 { left: 42%; width: 20px; height: 25px; background: var(--accent-coral); bottom: 35%; }
+  .planet-cat {
+    position: absolute;
+    font-size: 1.5rem;
+    bottom: 20%;
+    left: 50%;
+    transform: translateX(-50%);
+    animation: planetCatBounce 2s ease-in-out infinite;
+  }
+  @keyframes planetCatBounce {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(-5px); }
+  }
+  .orbit-ring {
+    position: absolute;
+    width: 300px; height: 300px;
+    border: 1px dashed rgba(255,255,255,0.08);
+    border-radius: 50%;
+    animation: orbitSpin 20s linear infinite;
+  }
+  @keyframes orbitSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  .concept-text h3 {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    color: var(--accent-cream);
+    margin-bottom: 1rem;
+  }
+  .concept-text p {
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+  }
+  .concept-features {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .concept-features li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: var(--bg-card);
+    border-radius: 12px;
+    border: 1px solid var(--border-subtle);
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+  }
+  .feat-icon {
+    font-size: 1.2rem;
+  }
+
+  /* ====== FLOW SECTION ====== */
+  .flow-section {
+    background: linear-gradient(180deg, #111833, #0d1225);
+  }
+  .flow-steps {
+    display: flex;
+    gap: 2rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .flow-step {
+    flex: 1;
+    min-width: 200px;
+    max-width: 240px;
+    text-align: center;
+    padding: 2rem 1.5rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 20px;
+    position: relative;
+  }
+  .flow-step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: -1.5rem;
+    width: 1.5rem;
+    height: 2px;
+    background: linear-gradient(90deg, var(--border-subtle), transparent);
+  }
+  .flow-number {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+    margin: 0 auto 1rem;
+    color: white;
+  }
+  .flow-number.n1 { background: linear-gradient(135deg, var(--accent-orange), var(--accent-coral)); }
+  .flow-number.n2 { background: linear-gradient(135deg, var(--accent-lavender), #A78BFA); }
+  .flow-number.n3 { background: linear-gradient(135deg, var(--accent-mint), #34D399); }
+  .flow-number.n4 { background: linear-gradient(135deg, var(--accent-pink), #EC4899); }
+  .flow-step h4 {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+    color: var(--accent-cream);
+  }
+  .flow-step p {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+  }
+
+  /* ====== TIMER SECTION ====== */
+  .timer-section {
+    background: linear-gradient(180deg, #0d1225, var(--bg-deep));
+  }
+  .timer-demo {
+    max-width: 400px;
+    margin: 0 auto;
+    text-align: center;
+  }
+  .timer-cat-state {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    display: inline-block;
+  }
+  .timer-ring-container {
+    position: relative;
+    width: 260px;
+    height: 260px;
+    margin: 0 auto 2rem;
+  }
+  .timer-ring-bg {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, var(--accent-orange) 0%, var(--accent-coral) 25%, transparent 25%);
+    opacity: 0.15;
+    animation: timerRotate 60s linear infinite;
+  }
+  @keyframes timerRotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  .timer-ring-inner {
+    position: absolute;
+    inset: 12px;
+    border-radius: 50%;
+    background: var(--bg-deep);
+    border: 1px solid var(--border-subtle);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .timer-display {
+    font-family: var(--font-display);
+    font-size: 3.5rem;
+    color: var(--accent-cream);
+    line-height: 1;
+  }
+  .timer-label {
+    font-size: 0.9rem;
+    color: var(--text-dim);
+    margin-top: 0.5rem;
+  }
+  .timer-controls {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-bottom: 2rem;
+  }
+  .timer-btn {
+    padding: 12px 28px;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: var(--font-body);
+    transition: all 0.3s;
+    border: none;
+  }
+  .timer-btn.start {
+    background: linear-gradient(135deg, var(--accent-orange), var(--accent-coral));
+    color: white;
+    box-shadow: 0 4px 20px var(--glow-orange);
+  }
+  .timer-btn.start:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(255,107,53,0.4);
+  }
+  .timer-btn.reset {
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-subtle);
+  }
+  .timer-btn.reset:hover {
+    background: var(--bg-card-hover);
+    color: var(--text-primary);
+  }
+  .timer-stats {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+  }
+  .timer-stat-value {
+    font-family: var(--font-display);
+    font-size: 1.8rem;
+    color: var(--accent-cream);
+  }
+  .timer-stat-label {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+  }
+
+  /* ====== ISOMETRIC MAP SYSTEM ====== */
+  .city-scene-section {
+    background: linear-gradient(180deg, #0d1428 0%, #0a0e1a 100%);
+    overflow: hidden;
+    padding: 4rem 0 0;
+  }
+
+  .city-scene-header {
+    text-align: center;
+    padding: 0 2rem 2rem;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  /* ====== XP BAR ====== */
+  .xp-bar-container {
+    max-width: 700px;
+    margin: 0 auto 2.5rem;
+    padding: 0 2rem;
+  }
+  .xp-bar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .xp-bar-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--accent-cream);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .xp-bar-label .xp-icon {
+    font-size: 1.1rem;
+  }
+  .xp-bar-level {
+    font-family: var(--font-display);
+    color: var(--accent-orange);
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .xp-bar-outer {
+    width: 100%;
+    height: 14px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .xp-bar-inner {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-orange), var(--accent-coral), #F59E0B);
+    border-radius: 10px;
+    transition: width 0.8s cubic-bezier(0.34, 1.2, 0.64, 1);
+    position: relative;
+    box-shadow: 0 0 12px rgba(255,107,53,0.3);
+  }
+  .xp-bar-inner::after {
+    content: '';
+    position: absolute;
+    right: 2px;
+    top: 2px;
+    bottom: 2px;
+    width: 10px;
+    background: rgba(255,255,255,0.4);
+    border-radius: 6px;
+  }
+  .xp-bar-spark {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 6px; height: 6px;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 0 6px #fff;
+    animation: xpSpark 1.5s ease-in-out infinite;
+    opacity: 0;
+  }
+  @keyframes xpSpark {
+    0%, 100% { opacity: 0; transform: translateY(-50%) scale(0.5); }
+    50% { opacity: 1; transform: translateY(-50%) scale(1.2); }
+  }
+  .xp-bar-nums {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+    font-size: 0.7rem;
+    color: var(--text-dim);
+  }
+
+  /* ====== FLOATING XP ====== */
+  .floating-xp {
+    position: fixed;
+    z-index: 1000;
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #FFD700;
+    text-shadow: 0 2px 8px rgba(255,215,0,0.5);
+    pointer-events: none;
+    animation: floatXP 1.2s ease-out forwards;
+  }
+  @keyframes floatXP {
+    0% { opacity: 1; transform: translateY(0) scale(1); }
+    60% { opacity: 1; transform: translateY(-60px) scale(1.1); }
+    100% { opacity: 0; transform: translateY(-100px) scale(0.8); }
+  }
+
+  /* ====== ISOMETRIC MAP CONTAINER ====== */
+  .iso-map-container {
+    position: relative;
+    width: 100%;
+    max-width: 1200px;
+    height: 600px;
+    margin: 0 auto;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #1a1510;
+    border: 1px solid rgba(255,255,255,0.08);
+    cursor: grab;
+    user-select: none;
+  }
+  .iso-map-container:active {
+    cursor: grabbing;
+  }
+
+  .iso-map-viewport {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    transform-origin: center center;
+    transition: transform 0.15s ease-out;
+    will-change: transform;
+  }
+
+  .iso-grid {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+  }
+
+  /* Isometric tile - positioned absolutely by JS */
+  .iso-tile {
+    position: absolute;
+    width: 64px;
+    height: 64px;
+    cursor: pointer;
+    transition: filter 0.2s;
+  }
+  .iso-tile:hover {
+    filter: brightness(1.15);
+  }
+
+  /* Isometric diamond shape using clip-path */
+  .iso-tile-shape {
+    position: absolute;
+    width: 64px;
+    height: 64px;
+    clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+    transition: all 0.3s;
+  }
+
+  /* Tile side faces for pseudo-3D */
+  .iso-tile-left {
+    position: absolute;
+    width: 32px;
+    height: 16px;
+    bottom: 0;
+    left: 0;
+    background: rgba(0,0,0,0.3);
+    clip-path: polygon(0% 0%, 100% 0%, 100% 100%);
+    transform-origin: bottom left;
+  }
+  .iso-tile-right {
+    position: absolute;
+    width: 32px;
+    height: 16px;
+    bottom: 0;
+    right: 0;
+    background: rgba(0,0,0,0.2);
+    clip-path: polygon(0% 0%, 100% 0%, 0% 100%);
+    transform-origin: bottom right;
+  }
+
+  /* Tile types */
+  .iso-tile.grass .iso-tile-shape { background: linear-gradient(135deg, #6B9E45, #5A8A3A); }
+  .iso-tile.grass .iso-tile-left { background: #4A7A30; }
+  .iso-tile.grass .iso-tile-right { background: #3D6A28; }
+
+  .iso-tile.dirt .iso-tile-shape { background: linear-gradient(135deg, #C4A76A, #B0955A); }
+  .iso-tile.dirt .iso-tile-left { background: #9A8450; }
+  .iso-tile.dirt .iso-tile-right { background: #8A7848; }
+
+  .iso-tile.water .iso-tile-shape { background: linear-gradient(135deg, #4ECDC4, #3DB8B0); }
+  .iso-tile.water .iso-tile-left { background: #2A9E96; }
+  .iso-tile.water .iso-tile-right { background: #1E8A82; }
+
+  .iso-tile.road .iso-tile-shape { background: linear-gradient(135deg, #D4C5A9, #C4B599); }
+  .iso-tile.road .iso-tile-left { background: #B0A080; }
+  .iso-tile.road .iso-tile-right { background: #A09070; }
+
+  .iso-tile.farmland .iso-tile-shape { background: linear-gradient(135deg, #8B6914, #7A5A10); }
+  .iso-tile.farmland .iso-tile-left { background: #6A4A08; }
+  .iso-tile.farmland .iso-tile-right { background: #5A3F06; }
+
+  .iso-tile.forest .iso-tile-shape { background: linear-gradient(135deg, #2D5A27, #1E4A18); }
+  .iso-tile.forest .iso-tile-left { background: #163A12; }
+  .iso-tile.forest .iso-tile-right { background: #0F2E0C; }
+
+  /* Fog of war */
+  .iso-tile.fog .iso-tile-shape {
+    background: linear-gradient(135deg, #2a2520, #1e1a16) !important;
+    opacity: 0.85;
+  }
+  .iso-tile.fog .iso-tile-left { background: #1a1612 !important; opacity: 0.85; }
+  .iso-tile.fog .iso-tile-right { background: #151210 !important; opacity: 0.85; }
+  .iso-tile.fog::after {
+    content: '';
+    position: absolute;
+    width: 64px;
+    height: 64px;
+    top: 0;
+    left: 0;
+    clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+    background: radial-gradient(circle, transparent 30%, rgba(20,18,15,0.6) 100%);
+    pointer-events: none;
+  }
+
+  /* Building on tile */
+  .iso-building {
+    position: absolute;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  /* Isometric building - 2.5D style */
+  .iso-building-box {
+    position: relative;
+    width: 36px;
+    transform-style: preserve-3d;
+  }
+
+  .iso-building-body {
+    position: relative;
+    width: 36px;
+    margin: 0 auto;
+  }
+
+  .iso-building-front {
+    width: 36px;
+    height: var(--bh, 40px);
+    background: linear-gradient(to bottom, var(--bc1), var(--bc2));
+    border: 1px solid rgba(0,0,0,0.2);
+    position: relative;
+    border-radius: 2px 2px 0 0;
+  }
+
+  .iso-building-side {
+    position: absolute;
+    top: 0;
+    right: -12px;
+    width: 12px;
+    height: var(--bh, 40px);
+    background: linear-gradient(to bottom, var(--bc1-dark), var(--bc2-dark));
+    border: 1px solid rgba(0,0,0,0.2);
+    transform: skewY(-30deg);
+    transform-origin: top left;
+    border-radius: 0 2px 0 0;
+  }
+
+  .iso-building-top {
+    position: absolute;
+    top: -7px;
+    left: 0;
+    width: 36px;
+    height: 14px;
+    background: linear-gradient(135deg, var(--bc1-light), var(--bc2-light));
+    border: 1px solid rgba(0,0,0,0.15);
+    transform: skewX(60deg);
+    transform-origin: bottom left;
+  }
+
+  /* Roof styles */
+  .iso-roof-triangle {
+    position: absolute;
+    top: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 20px solid transparent;
+    border-right: 20px solid transparent;
+    border-bottom: 18px solid var(--roof-color);
+    filter: drop-shadow(0 2px 2px rgba(0,0,0,0.2));
+  }
+
+  .iso-roof-flat {
+    position: absolute;
+    top: -7px;
+    left: -2px;
+    width: 40px;
+    height: 14px;
+    background: var(--roof-color);
+    border: 1px solid rgba(0,0,0,0.15);
+    transform: skewX(60deg);
+    transform-origin: bottom left;
+  }
+
+  .iso-roof-dome {
+    position: absolute;
+    top: -16px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 32px;
+    height: 18px;
+    background: var(--roof-color);
+    border-radius: 50% 50% 0 0;
+    border: 1px solid rgba(0,0,0,0.15);
+  }
+
+  /* Chimney */
+  .iso-chimney {
+    position: absolute;
+    top: -12px;
+    right: 4px;
+    width: 5px;
+    height: 10px;
+    background: #8B7355;
+    border: 1px solid rgba(0,0,0,0.2);
+  }
+
+  /* Smoke particles */
+  .iso-smoke {
+    position: absolute;
+    top: -18px;
+    right: 3px;
+    width: 6px;
+    height: 6px;
+    background: rgba(255,255,255,0.4);
+    border-radius: 50%;
+    animation: smokeRise 3s ease-out infinite;
+    pointer-events: none;
+  }
+  @keyframes smokeRise {
+    0% { opacity: 0.5; transform: translateY(0) scale(0.5); }
+    100% { opacity: 0; transform: translateY(-30px) scale(1.5); }
+  }
+
+  /* Windows on buildings */
+  .iso-window {
+    position: absolute;
+    width: 5px;
+    height: 7px;
+    background: rgba(255,255,200,0.8);
+    border: 0.5px solid rgba(0,0,0,0.2);
+    animation: windowGlow 2.5s ease-in-out infinite;
+  }
+  @keyframes windowGlow {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+  }
+
+  /* Door */
+  .iso-door {
+    position: absolute;
+    width: 8px;
+    height: 12px;
+    background: linear-gradient(to bottom, #6B4F3A, #4A3525);
+    border-radius: 4px 4px 0 0;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  /* Trees */
+  .iso-tree {
+    position: absolute;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    pointer-events: none;
+    z-index: 5;
+  }
+  .iso-tree-trunk {
+    width: 5px;
+    height: 12px;
+    background: linear-gradient(to right, #6B4E3D, #8B6E5D);
+    margin: 0 auto;
+  }
+  .iso-tree-top {
+    width: 0;
+    height: 0;
+    border-left: 14px solid transparent;
+    border-right: 14px solid transparent;
+    border-bottom: 24px solid var(--tree-color);
+    margin: 0 auto -6px;
+    filter: drop-shadow(0 2px 2px rgba(0,0,0,0.2));
+  }
+
+  /* Cat on map */
+  .iso-cat {
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    z-index: 50;
+    cursor: pointer;
+    transition: transform 0.2s;
+    pointer-events: auto;
+  }
+  .iso-cat:hover {
+    transform: scale(1.3);
+  }
+  .iso-cat svg {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+  }
+
+  /* Dialog bubble on map */
+  .iso-dialog {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) scale(0);
+    background: rgba(255,255,255,0.95);
+    color: #2a1a3d;
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    white-space: nowrap;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    z-index: 200;
+    pointer-events: none;
+    font-family: var(--font-body);
+    margin-bottom: 6px;
+  }
+  .iso-dialog.show {
+    animation: isoBubblePop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+  @keyframes isoBubblePop {
+    0% { transform: translateX(-50%) scale(0); opacity: 0; }
+    100% { transform: translateX(-50%) scale(1); opacity: 1; }
+  }
+
+  /* Unlock animation */
+  @keyframes isoUnlockBuild {
+    0% { transform: translateX(-50%) scale(0); opacity: 0; }
+    60% { transform: translateX(-50%) scale(1.1); }
+    100% { transform: translateX(-50%) scale(1); opacity: 1; }
+  }
+  .iso-building.unlocking {
+    animation: isoUnlockBuild 0.8s cubic-bezier(0.34, 1.2, 0.64, 1) forwards;
+  }
+
+  /* Map controls */
+  .map-controls {
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 50;
+  }
+  .map-control-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: rgba(0,0,0,0.6);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--text-primary);
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    backdrop-filter: blur(10px);
+  }
+  .map-control-btn:hover {
+    background: rgba(0,0,0,0.8);
+    border-color: rgba(255,255,255,0.2);
+  }
+
+  /* Map info panel */
+  .map-info {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    padding: 10px 16px;
+    background: rgba(0,0,0,0.6);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    z-index: 50;
+    backdrop-filter: blur(10px);
+  }
+  .map-info span {
+    color: var(--accent-cream);
+    font-weight: 600;
+  }
+
+  /* XP GAIN BUTTON */
+  .xp-gain-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 24px;
+    background: linear-gradient(135deg, rgba(255,107,53,0.15), rgba(245,158,11,0.1));
+    border: 1.5px solid rgba(255,107,53,0.3);
+    border-radius: 12px;
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: var(--accent-orange);
+    cursor: pointer;
+    font-family: var(--font-body);
+    transition: all 0.3s;
+    margin: 0 auto 0;
+    display: block;
+  }
+  .xp-gain-btn:hover {
+    background: linear-gradient(135deg, rgba(255,107,53,0.25), rgba(245,158,11,0.2));
+    border-color: var(--accent-orange);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(255,107,53,0.2);
+  }
+
+  .xp-actions {
+    text-align: center;
+    padding: 0.5rem 2rem 2rem;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  /* ====== SCENE LEGEND ====== */
+  .scene-legend {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 1.5rem 2rem 4rem;
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 100px;
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+  }
+  .legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+  }
+
+  /* ====== CITY PROGRESS ====== */
+  .city-section {
+    background: linear-gradient(180deg, #0d1225, #0a0e1a);
+  }
+  .city-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+  .city-level {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 16px;
+    transition: all 0.3s;
+  }
+  .city-level:hover {
+    background: var(--bg-card-hover);
+    transform: translateX(4px);
+  }
+  .city-level-icon {
+    font-size: 2rem;
+    flex-shrink: 0;
+  }
+  .city-level-info {
+    flex: 1;
+  }
+  .city-level-info h4 {
+    font-size: 1.1rem;
+    color: var(--accent-cream);
+    margin-bottom: 0.25rem;
+  }
+  .city-level-info p {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+  }
+  .city-level-bar {
+    width: 120px;
+    height: 8px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 4px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .city-level-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 1s ease;
+  }
+  .fill-orange { background: linear-gradient(90deg, var(--accent-orange), var(--accent-coral)); }
+  .fill-lavender { background: linear-gradient(90deg, var(--accent-lavender), #A78BFA); }
+  .fill-mint { background: linear-gradient(90deg, var(--accent-mint), #34D399); }
+  .fill-pink { background: linear-gradient(90deg, var(--accent-pink), #EC4899); }
+
+  /* ====== VALUE SECTION ====== */
+  .value-section {
+    background: linear-gradient(180deg, #0d1225, #0a0e1a);
+  }
+  .value-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 2rem;
+    margin-top: 3rem;
+  }
+  .value-card {
+    padding: 2.5rem;
+    border-radius: 24px;
+    position: relative;
+    overflow: hidden;
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    transition: all 0.3s;
+  }
+  .value-card:hover {
+    transform: translateY(-4px);
+    background: var(--bg-card-hover);
+  }
+  .value-tag {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 100px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+  .value-card.social .value-tag {
+    background: rgba(255,107,53,0.15);
+    color: var(--accent-orange);
+  }
+  .value-card.commercial .value-tag {
+    background: rgba(196,181,253,0.15);
+    color: var(--accent-lavender);
+  }
+  .value-card h3 {
+    font-size: 1.3rem;
+    color: var(--accent-cream);
+    margin-bottom: 0.75rem;
+  }
+  .value-card > p {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    margin-bottom: 1.5rem;
+  }
+  .value-points {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+  .value-points li {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+  }
+  .value-points li::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent-orange);
+    margin-top: 8px;
+    flex-shrink: 0;
+  }
+
+  /* ====== FOOTER ====== */
+  .footer {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: linear-gradient(180deg, #0a0e1a, #070a12);
+    border-top: 1px solid var(--border-subtle);
+  }
+  .footer-cat {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    opacity: 0.6;
+  }
+  .footer-title {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    color: var(--accent-cream);
+    margin-bottom: 0.5rem;
+  }
+  .footer-desc {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 2rem;
+  }
+  .footer-tags {
+    display: flex;
+    gap: 0.8rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+  }
+  .footer-tag {
+    padding: 6px 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 100px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+  }
+  .footer-copy {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  /* ====== FLOATING CATS ====== */
+  .floating-cats {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    overflow: hidden;
+  }
+  .floating-cat {
+    position: absolute;
+    font-size: 1.5rem;
+    opacity: 0.06;
+    animation: catFloat linear infinite;
+  }
+  @keyframes catFloat {
+    0% { transform: translateY(100vh) rotate(0deg); }
+    100% { transform: translateY(-100px) rotate(360deg); }
+  }
+
+  /* ====== RESPONSIVE ====== */
+  @media (max-width: 768px) {
+    .hero-cat { display: none; }
+    .flow-step:not(:last-child)::after { display: none; }
+    .flow-steps { flex-direction: column; align-items: center; }
+    .city-level { flex-direction: column; text-align: center; }
+    .city-level-bar { width: 100%; }
+    .timer-ring-container { width: 220px; height: 220px; }
+    .timer-display { font-size: 2.5rem; }
+    .cursor-dot, .cursor-ring { display: none; }
+    .concept-layout { grid-template-columns: 1fr; gap: 2rem; }
+    .iso-map-container { height: 400px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Custom Cursor -->
+<div class="cursor-dot" id="cursorDot"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- Floating Cats Background -->
+<div class="floating-cats" id="floatingCats"></div>
+
+<!-- ====== HERO ====== -->
+<section class="hero" id="hero">
+  <div class="hero-bg">
+    <div class="gradient-orb orb-1"></div>
+    <div class="gradient-orb orb-2"></div>
+    <div class="gradient-orb orb-3"></div>
+    <div class="stars-container" id="starsContainer"></div>
+  </div>
+
+  <div class="hero-content">
+    <div class="hero-badge">
+      <span class="dot"></span>
+      <span>工作学习赛道 · 社会公益</span>
+    </div>
+    <h1 class="hero-title">喵星复兴计划</h1>
+    <p class="hero-subtitle">用番茄钟养猫建城，让每一次专注都有意义。将自律变成一件有温度的事，在喵星上建造属于你的繁华都市。</p>
+    <div class="hero-cta-group">
+      <a href="#timer" class="btn-primary">
+        <span>⏱</span> 体验番茄钟
+      </a>
+      <a href="#cityScene" class="btn-ghost">
+        <span>🌍</span> 探索喵星
+      </a>
+    </div>
+  </div>
+
+  <div class="hero-cat">
+    <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="100" cy="130" rx="65" ry="55" fill="rgba(255,255,255,0.08)"/>
+      <circle cx="100" cy="95" r="45" fill="rgba(255,255,255,0.08)"/>
+      <polygon points="65,65 55,25 85,55" fill="rgba(255,255,255,0.08)"/>
+      <polygon points="135,65 145,25 115,55" fill="rgba(255,255,255,0.08)"/>
+      <circle cx="82" cy="88" r="6" fill="rgba(255,107,53,0.3)"/>
+      <circle cx="118" cy="88" r="6" fill="rgba(255,107,53,0.3)"/>
+      <ellipse cx="100" cy="102" rx="5" ry="3" fill="rgba(255,140,105,0.2)"/>
+      <path d="M90 108 Q100 115 110 108" stroke="rgba(255,255,255,0.1)" stroke-width="2" fill="none"/>
+    </svg>
+  </div>
+
+  <div class="scroll-indicator">
+    <div class="mouse"></div>
+    <span>向下探索</span>
+  </div>
+</section>
+
+<!-- ====== PROBLEM ====== -->
+<section class="problem-section" id="problem">
+  <div class="section-inner">
+    <div class="section-label">痛点洞察</div>
+    <h2 class="section-title">为什么我们需要喵星？</h2>
+    <p class="section-desc">传统效率工具让人难以坚持，而纯游戏又会带来负罪感。我们需要一个既能提升专注力、又能获得正向情绪反馈的工具。</p>
+    <div class="problem-grid">
+      <div class="problem-card">
+        <div class="problem-icon orange">😴</div>
+        <h3>效率工具太枯燥</h3>
+        <p>传统番茄钟界面单调、反馈感弱，用户往往用几天就放弃，缺乏持续使用的动力和成就感。</p>
+      </div>
+      <div class="problem-card">
+        <div class="problem-icon lavender">🎮</div>
+        <h3>游戏带来负罪感</h3>
+        <p>单纯的游戏虽然有趣，却会带来"浪费时间"的负罪感，让人在娱乐和自律之间反复挣扎。</p>
+      </div>
+      <div class="problem-card">
+        <div class="problem-icon pink">😔</div>
+        <h3>缺乏陪伴与激励</h3>
+        <p>独自学习工作时容易感到孤独和内耗，缺少温暖的陪伴感和可视化的成长反馈来对抗拖延。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ====== CONCEPT ====== -->
+<section class="concept-section" id="concept">
+  <div class="section-inner">
+    <div class="section-label">核心概念</div>
+    <h2 class="section-title">什么是喵星复兴计划？</h2>
+    <p class="section-desc">一款兼容 PC 和移动端的 Web 应用，将"专注力培养"与"猫咪陪伴+城市建造"完美融合。</p>
+    <div class="concept-layout">
+      <div class="concept-visual">
+        <div class="concept-planet">
+          <div class="planet-building pb-1"></div>
+          <div class="planet-building pb-2"></div>
+          <div class="planet-building pb-3"></div>
+          <div class="planet-building pb-4"></div>
+          <div class="planet-building pb-5"></div>
+          <div class="planet-cat">🐱</div>
+        </div>
+        <div class="orbit-ring"></div>
+      </div>
+      <div class="concept-text">
+        <h3>专注即建设，自律即养成</h3>
+        <p>用户通过番茄钟完成任务获取燃料，逐步将喵星从一个小纸箱建设成繁华都市。过程中还有各种小猫咪的待机互动和趣味故事发生。</p>
+        <ul class="concept-features">
+          <li><span class="feat-icon">🍅</span><span>番茄钟专注机制 — 每完成一个番茄钟获得建设燃料</span></li>
+          <li><span class="feat-icon">🐱</span><span>猫咪陪伴系统 — 治愈系猫咪待机互动与养成</span></li>
+          <li><span class="feat-icon">🏙️</span><span>城市建造体系 — 从纸箱到繁华都市的渐进式成长</span></li>
+          <li><span class="feat-icon">📖</span><span>趣味故事线 — 随建设进度解锁喵星复兴的故事章节</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ====== USER FLOW ====== -->
+<section class="flow-section" id="flow">
+  <div class="section-inner">
+    <div class="section-label">使用流程</div>
+    <h2 class="section-title">四步开启喵星之旅</h2>
+    <p class="section-desc">简单直觉的操作流程，让专注变得自然且有趣。</p>
+    <div class="flow-steps">
+      <div class="flow-step">
+        <div class="flow-number n1">1</div>
+        <h4>设定目标</h4>
+        <p>选择学习、工作或阅读任务，设定专注时长和目标</p>
+      </div>
+      <div class="flow-step">
+        <div class="flow-number n2">2</div>
+        <h4>开始专注</h4>
+        <p>启动番茄钟，猫咪会在旁边安静陪伴你专注</p>
+      </div>
+      <div class="flow-step">
+        <div class="flow-number n3">3</div>
+        <h4>获取燃料</h4>
+        <p>完成专注后获得燃料，猫咪也会开心庆祝</p>
+      </div>
+      <div class="flow-step">
+        <div class="flow-number n4">4</div>
+        <h4>建设喵星</h4>
+        <p>用燃料建造新建筑，解锁新猫咪和故事</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ====== TIMER DEMO ====== -->
+<section class="timer-section" id="timer">
+  <div class="section-inner">
+    <div class="section-label">互动体验</div>
+    <h2 class="section-title">试试番茄钟</h2>
+    <p class="section-desc">点击开始，感受专注的力量。猫咪正在等你。</p>
+    <div class="timer-demo">
+      <div class="timer-cat-state" id="timerCat">😺</div>
+      <div class="timer-ring-container">
+        <div class="timer-ring-bg"></div>
+        <div class="timer-ring-inner">
+          <div class="timer-display" id="timerDisplay">25:00</div>
+          <div class="timer-label" id="timerLabel">准备专注</div>
+        </div>
+      </div>
+      <div class="timer-controls">
+        <button class="timer-btn start" id="timerStart" onclick="toggleTimer()">开始专注</button>
+        <button class="timer-btn reset" onclick="resetTimer()">重置</button>
+      </div>
+      <div class="timer-stats">
+        <div class="timer-stat">
+          <div class="timer-stat-value" id="statTomatoes">0</div>
+          <div class="timer-stat-label">番茄数</div>
+        </div>
+        <div class="timer-stat">
+          <div class="timer-stat-value" id="statMinutes">0</div>
+          <div class="timer-stat-label">专注分钟</div>
+        </div>
+        <div class="timer-stat">
+          <div class="timer-stat-value" id="statFuel">0</div>
+          <div class="timer-stat-label">燃料</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ====== ISOMETRIC MAP CITY SCENE ====== -->
+<section class="city-scene-section" id="cityScene">
+  <div class="city-scene-header">
+    <div class="section-label">喵星世界</div>
+    <h2 class="section-title">专注赚经验，解锁喵星建筑</h2>
+    <p class="section-desc">每完成一个番茄钟即可获得经验值，逐步解锁喵星的所有建筑。滚轮缩放地图，拖拽平移，点击猫咪可以对话</p>
+  </div>
+
+  <!-- XP Bar -->
+  <div class="xp-bar-container">
+    <div class="xp-bar-header">
+      <span class="xp-bar-label"><span class="xp-icon">⭐</span>喵星经验</span>
+      <span class="xp-bar-level">Lv.<span id="xpLevel">1</span> 🏙️ <span id="xpStage">纸箱小屋</span></span>
+    </div>
+    <div class="xp-bar-outer">
+      <div class="xp-bar-inner" id="xpBarInner" style="width:0%">
+        <div class="xp-bar-spark" style="left:80%"></div>
+      </div>
+    </div>
+    <div class="xp-bar-nums">
+      <span id="xpCurrent">0</span>
+      <span id="xpNext">200</span>
+    </div>
+  </div>
+
+  <!-- Isometric Map -->
+  <div class="iso-map-container" id="isoMapContainer">
+    <div class="map-info">
+      <div>已解锁: <span id="unlockedCount">1</span>/7 建筑</div>
+      <div style="margin-top:4px;font-size:0.7rem;color:var(--text-dim)">滚轮缩放 · 拖拽移动</div>
+    </div>
+    <div class="iso-map-viewport" id="isoMapViewport">
+      <div class="iso-grid" id="isoGrid"></div>
+    </div>
+    <div class="map-controls">
+      <button class="map-control-btn" onclick="zoomMap(0.2)" title="放大">+</button>
+      <button class="map-control-btn" onclick="zoomMap(-0.2)" title="缩小">−</button>
+      <button class="map-control-btn" onclick="resetMapView()" title="重置视角">⌂</button>
+    </div>
+  </div>
+
+  <!-- XP Actions -->
+  <div class="xp-actions">
+    <button class="xp-gain-btn" id="xpGainBtn" onclick="gainXP()">
+      <span>🍅</span> 完成一个番茄钟 (+50 XP)
+    </button>
+  </div>
+
+  <!-- Legend -->
+  <div class="scene-legend">
+    <div class="legend-item">
+      <div class="legend-dot" style="background:#FF8C69;"></div>
+      <span>小橘 — 活泼话唠</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:#A78BFA;"></div>
+      <span>紫薰 — 文艺诗人</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:#60A5FA;"></div>
+      <span>蓝宝 — 聪明学者</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:#F9A8D4;"></div>
+      <span>粉团 — 贪吃懒猫</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:#FCD34D;"></div>
+      <span>金条 — 富有商人</span>
+    </div>
+  </div>
+</section>
+
+<!-- ====== CITY PROGRESS ====== -->
+<section class="city-section" id="city">
+  <div class="section-inner">
+    <div class="section-label">喵星建设</div>
+    <h2 class="section-title">从纸箱到都市</h2>
+    <p class="section-desc">每一段专注都在为喵星添砖加瓦，见证荒芜星球逐步变成繁华都市。</p>
+    <div class="city-progress">
+      <div class="city-level">
+        <div class="city-level-icon">📦</div>
+        <div class="city-level-info">
+          <h4>纸箱小屋</h4>
+          <p>喵星的起点，一只流浪猫的第一个温暖角落</p>
+        </div>
+        <div class="city-level-bar"><div class="city-level-bar-fill fill-orange" data-width="100"></div></div>
+      </div>
+      <div class="city-level">
+        <div class="city-level-icon">🏠</div>
+        <div class="city-level-info">
+          <h4>猫咪村落</h4>
+          <p>几间小屋聚集，猫咪们开始在这里安家落户</p>
+        </div>
+        <div class="city-level-bar"><div class="city-level-bar-fill fill-lavender" data-width="75"></div></div>
+      </div>
+      <div class="city-level">
+        <div class="city-level-icon">🏘️</div>
+        <div class="city-level-info">
+          <h4>喵星小镇</h4>
+          <p>街道初具规模，猫咪商店和公园拔地而起</p>
+        </div>
+        <div class="city-level-bar"><div class="city-level-bar-fill fill-mint" data-width="45"></div></div>
+      </div>
+      <div class="city-level">
+        <div class="city-level-icon">🌆</div>
+        <div class="city-level-info">
+          <h4>喵星都市</h4>
+          <p>繁华的天际线，猫咪们在摩天大楼间自由穿梭</p>
+        </div>
+        <div class="city-level-bar"><div class="city-level-bar-fill fill-pink" data-width="15"></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ====== VALUE ====== -->
+<section class="value-section" id="value">
+  <div class="section-inner">
+    <div class="section-label">价值与意义</div>
+    <h2 class="section-title">不止是效率工具</h2>
+    <p class="section-desc">喵星复兴计划在帮助用户提升专注力的同时，创造更深远的社会和商业价值。</p>
+    <div class="value-grid">
+      <div class="value-card social">
+        <span class="value-tag">社会价值</span>
+        <h3>温暖陪伴，对抗内耗</h3>
+        <p>关注青少年身心健康，通过游戏化的正向激励机制帮助用户建立良好的时间管理习惯。</p>
+        <ul class="value-points">
+          <li>减少拖延和效率低下带来的焦虑感</li>
+          <li>治愈系猫咪互动提供心理陪伴感</li>
+          <li>可视化成长反馈带来持续成就感</li>
+          <li>帮助对抗孤独与内耗情绪</li>
+        </ul>
+      </div>
+      <div class="value-card commercial">
+        <span class="value-tag">商业价值</span>
+        <h3>跨界融合，差异竞争</h3>
+        <p>效率工具 + 休闲游戏的跨界融合具有差异化竞争力，为商业化拓展提供丰富空间。</p>
+        <ul class="value-points">
+          <li>猫咪IP打造独特品牌辨识度</li>
+          <li>城市建造体系支撑长期用户留存</li>
+          <li>主题皮肤与周边商品变现路径</li>
+          <li>社交分享功能驱动自然增长</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ====== FOOTER ====== -->
+<footer class="footer">
+  <div class="footer-cat">🐱</div>
+  <h3 class="footer-title">喵星复兴计划</h3>
+  <p class="footer-desc">用番茄钟养猫建城，让每一次专注都有意义</p>
+  <div class="footer-tags">
+    <span class="footer-tag">工作学习</span>
+    <span class="footer-tag">社会公益</span>
+    <span class="footer-tag">番茄钟</span>
+    <span class="footer-tag">猫咪养成</span>
+    <span class="footer-tag">城市建造</span>
+    <span class="footer-tag">游戏化</span>
+  </div>
+  <div class="footer-copy">喵星复兴计划 · 创意概念展示 · 2026</div>
+</footer>
+
+<script>
+// ====== CUSTOM CURSOR ======
+const cursorDot = document.getElementById('cursorDot');
+const cursorRing = document.getElementById('cursorRing');
+let mouseX = 0, mouseY = 0;
+let ringX = 0, ringY = 0;
+
+document.addEventListener('mousemove', (e) => {
+  mouseX = e.clientX;
+  mouseY = e.clientY;
+  gsap.to(cursorDot, { x: mouseX - 4, y: mouseY - 4, duration: 0.1 });
+});
+
+function animateRing() {
+  ringX += (mouseX - ringX) * 0.15;
+  ringY += (mouseY - ringY) * 0.15;
+  gsap.set(cursorRing, { x: ringX - 18, y: ringY - 18 });
+  requestAnimationFrame(animateRing);
+}
+animateRing();
+
+document.querySelectorAll('a, button, .problem-card, .value-card, .city-level').forEach(el => {
+  el.addEventListener('mouseenter', () => {
+    gsap.to(cursorDot, { scale: 2.5, duration: 0.3 });
+    gsap.to(cursorRing, { scale: 1.5, opacity: 0.3, duration: 0.3 });
+  });
+  el.addEventListener('mouseleave', () => {
+    gsap.to(cursorDot, { scale: 1, duration: 0.3 });
+    gsap.to(cursorRing, { scale: 1, opacity: 0.5, duration: 0.3 });
+  });
+});
+
+// ====== STARS ======
+const starsContainer = document.getElementById('starsContainer');
+for (let i = 0; i < 80; i++) {
+  const star = document.createElement('div');
+  star.className = 'star';
+  star.style.left = Math.random() * 100 + '%';
+  star.style.top = Math.random() * 100 + '%';
+  star.style.width = (Math.random() * 2 + 1) + 'px';
+  star.style.height = star.style.width;
+  gsap.to(star, {
+    opacity: Math.random() * 0.6 + 0.2,
+    duration: Math.random() * 3 + 2,
+    repeat: -1, yoyo: true, ease: 'sine.inOut',
+    delay: Math.random() * 5
+  });
+  starsContainer.appendChild(star);
+}
+
+// ====== FLOATING CATS ======
+const floatingCats = document.getElementById('floatingCats');
+const catEmojis = ['🐱', '😺', '😸', '😻', '😽', '🙀', '😿', '😾'];
+for (let i = 0; i < 12; i++) {
+  const cat = document.createElement('div');
+  cat.className = 'floating-cat';
+  cat.textContent = catEmojis[Math.floor(Math.random() * catEmojis.length)];
+  cat.style.left = Math.random() * 100 + '%';
+  cat.style.fontSize = (Math.random() * 1.5 + 0.8) + 'rem';
+  cat.style.animationDuration = (Math.random() * 20 + 15) + 's';
+  cat.style.animationDelay = (Math.random() * 20) + 's';
+  floatingCats.appendChild(cat);
+}
+
+// ====== ISOMETRIC MAP SYSTEM ======
+const isoMapContainer = document.getElementById('isoMapContainer');
+const isoMapViewport = document.getElementById('isoMapViewport');
+const isoGrid = document.getElementById('isoGrid');
+
+// Map configuration
+const MAP_WIDTH = 12;
+const MAP_HEIGHT = 10;
+const TILE_W = 64;
+const TILE_H = 32;
+let mapScale = 1;
+let mapOffsetX = 0;
+let mapOffsetY = 0;
+let isDragging = false;
+let dragStartX = 0;
+let dragStartY = 0;
+
+// Tile types: grass, dirt, water, road, farmland, forest, building
+const tileMap = [
+  ['forest','forest','forest','forest','grass','grass','grass','grass','forest','forest','forest','forest'],
+  ['forest','forest','grass','grass','grass','road','grass','grass','grass','forest','forest','forest'],
+  ['forest','grass','grass','road','road','road','road','grass','grass','grass','forest','forest'],
+  ['grass','grass','grass','grass','road','grass','grass','grass','grass','grass','grass','forest'],
+  ['grass','grass','grass','grass','road','grass','grass','grass','grass','grass','grass','grass'],
+  ['grass','grass','grass','grass','road','grass','grass','grass','grass','grass','grass','grass'],
+  ['grass','grass','grass','grass','road','grass','grass','grass','grass','grass','grass','grass'],
+  ['grass','grass','grass','grass','road','road','road','grass','grass','grass','grass','grass'],
+  ['grass','grass','grass','grass','grass','grass','grass','grass','grass','grass','grass','grass'],
+  ['grass','grass','grass','grass','grass','grass','grass','grass','grass','grass','grass','grass'],
+];
+
+// Building definitions with positions
+const buildingDefs = [
+  { id: 'box', name: '纸箱小屋', color: '#FF6B35', color2: '#FF8C69', xpReq: 0, height: 30, icon: '📦', x: 5, y: 4, roof: 'triangle' },
+  { id: 'house', name: '猫咪小屋', color: '#C4B5FD', color2: '#A78BFA', xpReq: 200, height: 45, icon: '🏠', x: 3, y: 3, roof: 'triangle' },
+  { id: 'shop', name: '鱼干商店', color: '#6EE7B7', color2: '#34D399', xpReq: 400, height: 35, icon: '🐟', x: 7, y: 3, roof: 'flat' },
+  { id: 'cafe', name: '猫咪咖啡', color: '#F9A8D4', color2: '#EC4899', xpReq: 600, height: 40, icon: '☕', x: 5, y: 2, roof: 'dome' },
+  { id: 'school', name: '喵星学堂', color: '#93C5FD', color2: '#60A5FA', xpReq: 800, height: 50, icon: '📚', x: 2, y: 5, roof: 'triangle' },
+  { id: 'tower', name: '观星塔', color: '#FCD34D', color2: '#F59E0B', xpReq: 1000, height: 70, icon: '⭐', x: 8, y: 5, roof: 'flat' },
+  { id: 'palace', name: '猫咪宫殿', color: '#F472B6', color2: '#DB2777', xpReq: 1200, height: 55, icon: '👑', x: 5, y: 6, roof: 'dome' },
+];
+
+// Fog of war - which tiles are visible
+let fogMap = [];
+for (let y = 0; y < MAP_HEIGHT; y++) {
+  fogMap[y] = [];
+  for (let x = 0; x < MAP_WIDTH; x++) {
+    // Only center area visible initially
+    fogMap[y][x] = (x >= 3 && x <= 7 && y >= 2 && y <= 6) ? false : true;
+  }
+}
+
+// Stage names
+const stageNames = ['纸箱小屋', '猫咪村落', '喵星小镇', '繁华都市', '天空之城'];
+
+// XP system state
+let currentXP = 0;
+let currentLevel = 1;
+
+// Create tile element with absolute positioning
+function createTile(x, y, type, isFog) {
+  const tile = document.createElement('div');
+  tile.className = `iso-tile ${type}${isFog ? ' fog' : ''}`;
+  tile.dataset.x = x;
+  tile.dataset.y = y;
+
+  const pos = isoToScreen(x, y);
+  tile.style.left = pos.x + 'px';
+  tile.style.top = pos.y + 'px';
+
+  tile.innerHTML = `
+    <div class="iso-tile-shape"></div>
+    <div class="iso-tile-left"></div>
+    <div class="iso-tile-right"></div>
+  `;
+
+  return tile;
+}
+
+// Create building element
+function createBuilding(def, isUnlocked) {
+  const building = document.createElement('div');
+  building.className = 'iso-building' + (isUnlocked ? '' : ' locked');
+  building.id = `building-${def.id}`;
+
+  const roofColor = def.color2;
+  const darkColor = adjustColor(def.color, -30);
+  const lightColor = adjustColor(def.color2, 20);
+
+  let roofHTML = '';
+  if (def.roof === 'triangle') {
+    roofHTML = `<div class="iso-roof-triangle" style="--roof-color:${roofColor};"></div>`;
+  } else if (def.roof === 'flat') {
+    roofHTML = `<div class="iso-roof-flat" style="--roof-color:${roofColor};"></div>`;
+  } else if (def.roof === 'dome') {
+    roofHTML = `<div class="iso-roof-dome" style="--roof-color:${roofColor};"></div>`;
+  }
+
+  const chimneyHTML = def.id !== 'box' && def.id !== 'tower' ? `
+    <div class="iso-chimney"></div>
+    ${isUnlocked ? '<div class="iso-smoke"></div>' : ''}
+  ` : '';
+
+  // Windows
+  let windowsHTML = '';
+  if (isUnlocked) {
+    const windowRows = Math.floor(def.height / 20);
+    for (let i = 0; i < windowRows; i++) {
+      windowsHTML += `<div class="iso-window" style="top:${8 + i * 16}px;left:6px;"></div>`;
+      windowsHTML += `<div class="iso-window" style="top:${8 + i * 16}px;right:6px;"></div>`;
+    }
+  }
+
+  const lockedOverlay = !isUnlocked ? `
+    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:20;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+      </svg>
+    </div>
+    <div style="position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);font-size:10px;white-space:nowrap;background:rgba(0,0,0,0.7);padding:2px 6px;border-radius:4px;color:#fff;">${def.xpReq}XP</div>
+  ` : '';
+
+  building.innerHTML = `
+    <div class="iso-building-box" style="--bh:${def.height}px;--bc1:${def.color};--bc2:${def.color2};--bc1-dark:${darkColor};--bc2-dark:${adjustColor(def.color2, -30)};--bc1-light:${lightColor};--bc2-light:${adjustColor(def.color2, 40)};">
+      <div class="iso-building-top"></div>
+      <div class="iso-building-body">
+        <div class="iso-building-front">
+          ${windowsHTML}
+          ${isUnlocked ? '<div class="iso-door"></div>' : ''}
+        </div>
+        <div class="iso-building-side"></div>
+      </div>
+      ${roofHTML}
+      ${chimneyHTML}
+      ${lockedOverlay}
+    </div>
+  `;
+
+  return building;
+}
+
+// Create tree element
+function createTree(color) {
+  const tree = document.createElement('div');
+  tree.className = 'iso-tree';
+  tree.innerHTML = `
+    <div class="iso-tree-top" style="--tree-color:${color};"></div>
+    <div class="iso-tree-trunk"></div>
+  `;
+  return tree;
+}
+
+// Helper: darken/lighten color
+function adjustColor(hex, amount) {
+  const num = parseInt(hex.replace('#', ''), 16);
+  const r = Math.min(255, Math.max(0, (num >> 16) + amount));
+  const g = Math.min(255, Math.max(0, ((num >> 8) & 0x00FF) + amount));
+  const b = Math.min(255, Math.max(0, (num & 0x0000FF) + amount));
+  return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
+}
+
+// Convert grid coordinates to isometric screen position
+function isoToScreen(x, y) {
+  return {
+    x: (x - y) * (TILE_W / 2),
+    y: (x + y) * (TILE_H / 2)
+  };
+}
+
+// Initialize map
+function initMap() {
+  isoGrid.innerHTML = '';
+
+  for (let y = 0; y < MAP_HEIGHT; y++) {
+    for (let x = 0; x < MAP_WIDTH; x++) {
+      const type = tileMap[y][x];
+      const isFog = fogMap[y][x];
+      const tile = createTile(x, y, type, isFog);
+
+      // Add trees to forest tiles
+      if (type === 'forest' && !isFog) {
+        const tree = createTree('#2D8A3E');
+        tile.appendChild(tree);
+      }
+
+      // Add building if there's one at this position
+      const buildingDef = buildingDefs.find(b => b.x === x && b.y === y);
+      if (buildingDef) {
+        const isUnlocked = currentXP >= buildingDef.xpReq;
+        const building = createBuilding(buildingDef, isUnlocked);
+        tile.appendChild(building);
+      }
+
+      isoGrid.appendChild(tile);
+    }
+  }
+
+  // Center the grid in the viewport
+  const centerPos = isoToScreen((MAP_WIDTH - 1) / 2, (MAP_HEIGHT - 1) / 2);
+  isoGrid.style.marginLeft = (-centerPos.x) + 'px';
+  isoGrid.style.marginTop = (-centerPos.y) + 'px';
+}
+
+// Update fog of war based on unlocked buildings
+function updateFog() {
+  const unlockedBuildings = buildingDefs.filter(b => currentXP >= b.xpReq);
+
+  // Reveal area around each unlocked building
+  unlockedBuildings.forEach(b => {
+    for (let dy = -2; dy <= 2; dy++) {
+      for (let dx = -2; dx <= 2; dx++) {
+        const nx = b.x + dx;
+        const ny = b.y + dy;
+        if (nx >= 0 && nx < MAP_WIDTH && ny >= 0 && ny < MAP_HEIGHT) {
+          fogMap[ny][nx] = false;
+        }
+      }
+    }
+  });
+
+  // Re-initialize map with updated fog
+  initMap();
+}
+
+// Map zoom
+function zoomMap(delta) {
+  mapScale = Math.max(0.4, Math.min(2.5, mapScale + delta));
+  updateMapTransform();
+}
+
+// Reset map view
+function resetMapView() {
+  mapScale = 1;
+  mapOffsetX = 0;
+  mapOffsetY = 0;
+  updateMapTransform();
+}
+
+// Update map transform
+function updateMapTransform() {
+  isoMapViewport.style.transform = `translate(calc(-50% + ${mapOffsetX}px), calc(-50% + ${mapOffsetY}px)) scale(${mapScale})`;
+}
+
+// Mouse wheel zoom
+isoMapContainer.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const delta = e.deltaY > 0 ? -0.1 : 0.1;
+  zoomMap(delta);
+}, { passive: false });
+
+// Drag to pan
+isoMapContainer.addEventListener('mousedown', (e) => {
+  isDragging = true;
+  dragStartX = e.clientX - mapOffsetX;
+  dragStartY = e.clientY - mapOffsetY;
+  isoMapContainer.style.cursor = 'grabbing';
+});
+
+document.addEventListener('mousemove', (e) => {
+  if (!isDragging) return;
+  mapOffsetX = e.clientX - dragStartX;
+  mapOffsetY = e.clientY - dragStartY;
+  updateMapTransform();
+});
+
+document.addEventListener('mouseup', () => {
+  isDragging = false;
+  isoMapContainer.style.cursor = 'grab';
+});
+
+// Touch support for mobile
+isoMapContainer.addEventListener('touchstart', (e) => {
+  if (e.touches.length === 1) {
+    isDragging = true;
+    dragStartX = e.touches[0].clientX - mapOffsetX;
+    dragStartY = e.touches[0].clientY - mapOffsetY;
+  }
+}, { passive: true });
+
+isoMapContainer.addEventListener('touchmove', (e) => {
+  if (isDragging && e.touches.length === 1) {
+    e.preventDefault();
+    mapOffsetX = e.touches[0].clientX - dragStartX;
+    mapOffsetY = e.touches[0].clientY - dragStartY;
+    updateMapTransform();
+  }
+}, { passive: false });
+
+isoMapContainer.addEventListener('touchend', () => {
+  isDragging = false;
+});
+
+// Initialize map
+initMap();
+
+// ====== XP SYSTEM ======
+function updateXPBar() {
+  const nextLevelXP = currentLevel * 200;
+  const levelStartXP = (currentLevel - 1) * 200;
+  const levelProgress = ((currentXP - levelStartXP) / (nextLevelXP - levelStartXP)) * 100;
+
+  document.getElementById('xpBarInner').style.width = Math.min(100, Math.max(0, levelProgress)) + '%';
+  document.getElementById('xpCurrent').textContent = currentXP;
+  document.getElementById('xpNext').textContent = nextLevelXP;
+  document.getElementById('xpLevel').textContent = currentLevel;
+
+  let stageIdx = 0;
+  if (currentLevel >= 7) stageIdx = 4;
+  else if (currentLevel >= 5) stageIdx = 3;
+  else if (currentLevel >= 3) stageIdx = 2;
+  else if (currentLevel >= 2) stageIdx = 1;
+  document.getElementById('xpStage').textContent = stageNames[stageIdx];
+
+  // Update unlocked count
+  const unlockedCount = buildingDefs.filter(b => currentXP >= b.xpReq).length;
+  document.getElementById('unlockedCount').textContent = unlockedCount;
+}
+
+// Floating XP animation
+function showFloatingXP(amount, x, y) {
+  const el = document.createElement('div');
+  el.className = 'floating-xp';
+  el.textContent = '+' + amount + ' XP';
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1200);
+}
+
+// Gain XP
+function gainXP() {
+  const xpGain = 50;
+  const nextLevelXP = currentLevel * 200;
+
+  const btn = document.getElementById('xpGainBtn');
+  const rect = btn.getBoundingClientRect();
+  showFloatingXP(xpGain, rect.left + rect.width / 2 - 30, rect.top);
+
+  currentXP += xpGain;
+  updateXPBar();
+
+  const bar = document.getElementById('xpBarInner');
+  gsap.fromTo(bar, { opacity: 0.7 }, { opacity: 1, duration: 0.3, yoyo: true, repeat: 1 });
+
+  if (currentXP >= nextLevelXP) {
+    currentLevel++;
+    updateXPBar();
+
+    const levelEl = document.getElementById('xpLevel');
+    gsap.fromTo(levelEl, { scale: 1.8, color: '#FFD700' }, { scale: 1, color: '#FF6B35', duration: 0.6, ease: 'elastic.out(1, 0.5)' });
+
+    const header = document.querySelector('.city-scene-header .section-desc');
+    const origText = header.textContent;
+    header.textContent = '🎉 喵星升级了！新区域已解锁...';
+    header.style.color = '#FFD700';
+    setTimeout(() => {
+      header.textContent = origText;
+      header.style.color = '';
+    }, 2500);
+  }
+
+  // Check building unlocks and update fog
+  let newUnlock = false;
+  buildingDefs.forEach(def => {
+    if (currentXP >= def.xpReq && currentXP - xpGain < def.xpReq) {
+      newUnlock = true;
+    }
+  });
+
+  if (newUnlock) {
+    updateFog();
+  }
+
+  gsap.fromTo(btn,
+    { scale: 1 },
+    { scale: 1.05, duration: 0.15, yoyo: true, repeat: 1, ease: 'power2.out' }
+  );
+}
+
+// ====== CATS ON MAP ======
+const catDefs = [
+  { name: '小橘', color: '#FF8C69', colorDark: '#E07050', earInner: '#FFB599', eyeColor: '#2a1a3d', dialogs: ['再拿50经验就能解锁新区域了！', '这片地图好大呀~', '专注赚经验，一起探索喵星吧！'], startX: 5, startY: 4 },
+  { name: '紫薰', color: '#A78BFA', colorDark: '#8B6FE0', earInner: '#C4B5FD', eyeColor: '#2a1a3d', dialogs: ['迷雾之外的风景一定很美。', '每一片新土地，都是专注的馈赠。', '地图慢慢展开，像诗一样。'], startX: 3, startY: 3 },
+  { name: '蓝宝', color: '#60A5FA', colorDark: '#4088E0', earInner: '#93C5FD', eyeColor: '#2a1a3d', dialogs: ['按当前速率，再3个番茄钟就能升级！', '地图有12x10=120个格子呢。', '每200经验解锁一片新区域。'], startX: 7, startY: 3 },
+  { name: '粉团', color: '#F9A8D4', colorDark: '#EC4899', earInner: '#FBCFE8', eyeColor: '#2a1a3d', dialogs: ['zZZ...地图好大，走累了...', '迷雾里会不会藏着鱼干？', '好期待看到完整的喵星地图~'], startX: 5, startY: 2 },
+  { name: '金条', color: '#FCD34D', colorDark: '#F59E0B', earInner: '#FDE68A', eyeColor: '#2a1a3d', dialogs: ['经验就是财富，地图就是版图！', '我投资了整片喵星大陆~', '解锁所有区域需要1200经验！'], startX: 2, startY: 5 },
+];
+
+function createCatSVG(cat) {
+  return `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="24" cy="34" rx="14" ry="12" fill="${cat.color}"/>
+    <circle cx="24" cy="20" r="11" fill="${cat.color}"/>
+    <polygon points="15,14 12,4 20,11" fill="${cat.color}"/>
+    <polygon points="16,13 14,6 19,11" fill="${cat.earInner}"/>
+    <polygon points="33,14 36,4 28,11" fill="${cat.color}"/>
+    <polygon points="32,13 34,6 29,11" fill="${cat.earInner}"/>
+    <ellipse cx="20" cy="19" rx="2.5" ry="3" fill="white"/>
+    <ellipse cx="28" cy="19" rx="2.5" ry="3" fill="white"/>
+    <ellipse cx="20.5" cy="19.5" rx="1.5" ry="2" fill="${cat.eyeColor}"/>
+    <ellipse cx="28.5" cy="19.5" rx="1.5" ry="2" fill="${cat.eyeColor}"/>
+    <circle cx="21" cy="18.5" r="0.7" fill="white"/>
+    <circle cx="29" cy="18.5" r="0.7" fill="white"/>
+    <ellipse cx="24" cy="22.5" rx="1.5" ry="1" fill="${cat.colorDark}"/>
+    <path d="M22 24 Q24 26 26 24" stroke="${cat.colorDark}" stroke-width="0.8" fill="none" stroke-linecap="round"/>
+    <line x1="14" y1="21" x2="19" y2="22" stroke="${cat.colorDark}" stroke-width="0.5" opacity="0.5"/>
+    <line x1="14" y1="23" x2="19" y2="23" stroke="${cat.colorDark}" stroke-width="0.5" opacity="0.5"/>
+    <line x1="29" y1="22" x2="34" y2="21" stroke="${cat.colorDark}" stroke-width="0.5" opacity="0.5"/>
+    <line x1="29" y1="23" x2="34" y2="23" stroke="${cat.colorDark}" stroke-width="0.5" opacity="0.5"/>
+    <path d="M36 36 Q42 30 40 24" stroke="${cat.color}" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <ellipse cx="18" cy="44" rx="4" ry="2.5" fill="${cat.colorDark}"/>
+    <ellipse cx="30" cy="44" rx="4" ry="2.5" fill="${cat.colorDark}"/>
+  </svg>`;
+}
+
+// Place cats on map
+const catElements = [];
+function initCats() {
+  catDefs.forEach((cat, index) => {
+    const tile = document.querySelector(`.iso-tile[data-x="${cat.startX}"][data-y="${cat.startY}"]`);
+    if (!tile) return;
+
+    const catEl = document.createElement('div');
+    catEl.className = 'iso-cat';
+    catEl.innerHTML = `
+      ${createCatSVG(cat)}
+      <div class="iso-dialog" id="cat-dialog-${index}"></div>
+    `;
+
+    tile.appendChild(catEl);
+
+    catElements.push({
+      el: catEl,
+      def: cat,
+      currentX: cat.startX,
+      currentY: cat.startY,
+      dialogTimeout: null,
+      moveTimeout: null
+    });
+
+    // Click to talk
+    catEl.addEventListener('click', (e) => {
+      e.stopPropagation();
+      triggerCatDialog(index);
+    });
+  });
+}
+
+function triggerCatDialog(index) {
+  const catObj = catElements[index];
+  const dialog = document.getElementById(`cat-dialog-${index}`);
+
+  if (catObj.dialogTimeout) clearTimeout(catObj.dialogTimeout);
+  if (catObj.moveTimeout) clearTimeout(catObj.moveTimeout);
+
+  const text = catObj.def.dialogs[Math.floor(Math.random() * catObj.def.dialogs.length)];
+  dialog.textContent = text;
+  dialog.classList.add('show');
+
+  catObj.dialogTimeout = setTimeout(() => {
+    dialog.classList.remove('show');
+    catObj.moveTimeout = setTimeout(() => moveCat(index), 1000);
+  }, 3000);
+}
+
+function moveCat(index) {
+  const catObj = catElements[index];
+  const directions = [[0,1], [0,-1], [1,0], [-1,0]];
+  const dir = directions[Math.floor(Math.random() * directions.length)];
+  const newX = Math.max(0, Math.min(MAP_WIDTH - 1, catObj.currentX + dir[0]));
+  const newY = Math.max(0, Math.min(MAP_HEIGHT - 1, catObj.currentY + dir[1]));
+
+  // Check if tile is not fog
+  if (fogMap[newY][newX]) return;
+
+  const newTile = document.querySelector(`.iso-tile[data-x="${newX}"][data-y="${newY}"]`);
+  if (!newTile) return;
+
+  catObj.currentX = newX;
+  catObj.currentY = newY;
+  newTile.appendChild(catObj.el);
+}
+
+// Auto move cats
+function scheduleCatMoves() {
+  catElements.forEach((cat, i) => {
+    if (!cat.dialogTimeout) {
+      setTimeout(() => moveCat(i), Math.random() * 5000 + 3000);
+    }
+  });
+  setTimeout(scheduleCatMoves, 6000);
+}
+
+// Initialize after map
+setTimeout(() => {
+  initCats();
+  scheduleCatMoves();
+}, 100);
+
+// ====== GSAP SCROLL ANIMATIONS ======
+gsap.registerPlugin(ScrollTrigger);
+
+// Hero entrance
+gsap.from('.hero-badge', { y: 30, opacity: 0, duration: 0.8, delay: 0.2, ease: 'power3.out' });
+gsap.from('.hero-title', { y: 50, opacity: 0, duration: 1, delay: 0.4, ease: 'power3.out' });
+gsap.from('.hero-subtitle', { y: 30, opacity: 0, duration: 0.8, delay: 0.7, ease: 'power3.out' });
+gsap.from('.hero-cta-group', { y: 30, opacity: 0, duration: 0.8, delay: 0.9, ease: 'power3.out' });
+gsap.from('.hero-cat', { scale: 0.5, opacity: 0, duration: 1.2, delay: 1.1, ease: 'elastic.out(1, 0.5)' });
+gsap.from('.scroll-indicator', { opacity: 0, duration: 1, delay: 1.5, ease: 'power2.out' });
+
+// Problem cards
+gsap.utils.toArray('.problem-card').forEach((card, i) => {
+  gsap.from(card, {
+    scrollTrigger: { trigger: card, start: 'top 85%', toggleActions: 'play none none reverse' },
+    y: 60, opacity: 0, duration: 0.7, delay: i * 0.15, ease: 'power3.out'
+  });
+});
+
+// Concept section
+gsap.from('.concept-visual', {
+  scrollTrigger: { trigger: '.concept-layout', start: 'top 80%' },
+  x: -80, opacity: 0, duration: 1, ease: 'power3.out'
+});
+gsap.from('.concept-text', {
+  scrollTrigger: { trigger: '.concept-layout', start: 'top 80%' },
+  x: 80, opacity: 0, duration: 1, delay: 0.2, ease: 'power3.out'
+});
+
+gsap.utils.toArray('.planet-building').forEach((b, i) => {
+  gsap.from(b, {
+    scrollTrigger: { trigger: '.concept-visual', start: 'top 80%' },
+    scaleY: 0, transformOrigin: 'bottom center',
+    duration: 0.6, delay: 0.5 + i * 0.15, ease: 'elastic.out(1, 0.6)'
+  });
+});
+
+// Flow steps
+gsap.utils.toArray('.flow-step').forEach((step, i) => {
+  gsap.from(step, {
+    scrollTrigger: { trigger: step, start: 'top 85%' },
+    y: 50, opacity: 0, duration: 0.7, delay: i * 0.15, ease: 'power3.out'
+  });
+});
+
+// Timer section
+gsap.from('.timer-demo', {
+  scrollTrigger: { trigger: '.timer-demo', start: 'top 80%' },
+  scale: 0.9, opacity: 0, duration: 0.8, ease: 'power3.out'
+});
+
+// XP bar entrance
+gsap.from('.xp-bar-container', {
+  scrollTrigger: { trigger: '.city-scene-section', start: 'top 75%' },
+  y: 40, opacity: 0, duration: 0.8, ease: 'power3.out'
+});
+
+// Isometric map entrance
+gsap.from('.iso-map-container', {
+  scrollTrigger: { trigger: '.city-scene-section', start: 'top 75%' },
+  y: 80, opacity: 0, duration: 1, ease: 'power3.out'
+});
+
+// City levels
+gsap.utils.toArray('.city-level').forEach((level, i) => {
+  gsap.from(level, {
+    scrollTrigger: { trigger: level, start: 'top 85%' },
+    x: -60, opacity: 0, duration: 0.7, delay: i * 0.12, ease: 'power3.out'
+  });
+});
+
+gsap.utils.toArray('.city-level-bar-fill').forEach(bar => {
+  const targetWidth = bar.dataset.width;
+  gsap.fromTo(bar, { width: '0%' }, {
+    scrollTrigger: { trigger: bar, start: 'top 90%' },
+    width: targetWidth + '%', duration: 1.5, ease: 'power3.out'
+  });
+});
+
+// Value cards
+gsap.utils.toArray('.value-card').forEach((card, i) => {
+  gsap.from(card, {
+    scrollTrigger: { trigger: card, start: 'top 85%' },
+    y: 60, opacity: 0, duration: 0.8, delay: i * 0.2, ease: 'power3.out'
+  });
+});
+
+// Section labels and titles
+gsap.utils.toArray('section').forEach(section => {
+  const label = section.querySelector('.section-label');
+  const title = section.querySelector('.section-title');
+  const desc = section.querySelector('.section-desc');
+  if (label) {
+    gsap.from(label, {
+      scrollTrigger: { trigger: section, start: 'top 80%' },
+      x: -30, opacity: 0, duration: 0.6, ease: 'power3.out'
+    });
+  }
+  if (title) {
+    gsap.from(title, {
+      scrollTrigger: { trigger: section, start: 'top 80%' },
+      y: 30, opacity: 0, duration: 0.7, delay: 0.1, ease: 'power3.out'
+    });
+  }
+  if (desc) {
+    gsap.from(desc, {
+      scrollTrigger: { trigger: section, start: 'top 80%' },
+      y: 20, opacity: 0, duration: 0.6, delay: 0.2, ease: 'power3.out'
+    });
+  }
+});
+
+// ====== TOMATO TIMER LOGIC ======
+let timerInterval = null;
+let timerRunning = false;
+let timerSeconds = 25 * 60;
+let totalTomatoes = 0;
+let totalMinutes = 0;
+let totalFuel = 0;
+
+const timerDisplay = document.getElementById('timerDisplay');
+const timerLabel = document.getElementById('timerLabel');
+const timerCat = document.getElementById('timerCat');
+const timerStart = document.getElementById('timerStart');
+
+function updateTimerDisplay() {
+  const mins = Math.floor(timerSeconds / 60);
+  const secs = timerSeconds % 60;
+  timerDisplay.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+}
+
+function toggleTimer() {
+  if (timerRunning) { pauseTimer(); } else { startTimer(); }
+}
+
+function startTimer() {
+  timerRunning = true;
+  timerStart.textContent = '暂停';
+  timerLabel.textContent = '专注中...';
+  timerCat.textContent = '😺';
+  gsap.to(timerCat, { scale: 1.2, duration: 0.3, yoyo: true, repeat: 1, ease: 'elastic.out(1, 0.5)' });
+
+  timerInterval = setInterval(() => {
+    timerSeconds--;
+    updateTimerDisplay();
+    if (timerSeconds <= 0) {
+      clearInterval(timerInterval);
+      timerRunning = false;
+      timerStart.textContent = '开始专注';
+      timerLabel.textContent = '完成！';
+      timerCat.textContent = '😻';
+      totalTomatoes++;
+      totalMinutes += 25;
+      totalFuel += 25;
+      document.getElementById('statTomatoes').textContent = totalTomatoes;
+      document.getElementById('statMinutes').textContent = totalMinutes;
+      document.getElementById('statFuel').textContent = totalFuel;
+      if (typeof gainXP === 'function') gainXP();
+      gsap.fromTo(timerCat, { scale: 1 }, { scale: 1.5, duration: 0.4, yoyo: true, repeat: 3, ease: 'elastic.out(1, 0.5)' });
+      gsap.fromTo(timerDisplay, { color: '#FF6B35' }, { color: '#FFF5E6', duration: 1, delay: 1.5 });
+      timerSeconds = 25 * 60;
+      setTimeout(() => {
+        updateTimerDisplay();
+        timerLabel.textContent = '准备专注';
+        timerCat.textContent = '😺';
+      }, 3000);
+    }
+  }, 1000);
+}
+
+function pauseTimer() {
+  clearInterval(timerInterval);
+  timerRunning = false;
+  timerStart.textContent = '继续';
+  timerLabel.textContent = '已暂停';
+  timerCat.textContent = '😿';
+  gsap.to(timerCat, { rotation: 10, duration: 0.3, yoyo: true, repeat: 1, ease: 'power2.inOut' });
+}
+
+function resetTimer() {
+  clearInterval(timerInterval);
+  timerRunning = false;
+  timerSeconds = 25 * 60;
+  updateTimerDisplay();
+  timerStart.textContent = '开始专注';
+  timerLabel.textContent = '准备专注';
+  timerCat.textContent = '😺';
+}
+
+// ====== PARALLAX ON HERO ORBS ======
+document.addEventListener('mousemove', (e) => {
+  const x = (e.clientX / window.innerWidth - 0.5) * 2;
+  const y = (e.clientY / window.innerHeight - 0.5) * 2;
+  gsap.to('.orb-1', { x: x * 20, y: y * 15, duration: 1.5, ease: 'power2.out' });
+  gsap.to('.orb-2', { x: x * -15, y: y * -20, duration: 1.5, ease: 'power2.out' });
+  gsap.to('.orb-3', { x: x * 10, y: y * 12, duration: 1.5, ease: 'power2.out' });
+});
+
+// ====== SMOOTH SCROLL ======
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+  anchor.addEventListener('click', function(e) {
+    e.preventDefault();
+    const target = document.querySelector(this.getAttribute('href'));
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+});
+</script>
+</body>
+</html>
