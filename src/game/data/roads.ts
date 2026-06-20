@@ -6,7 +6,7 @@
  * 建筑可放置在道路地形上（沿街建筑），形成天际线式路网骨架。
  * 颜色为纯色占位，后期替换为 AI 生成等距道路贴图。
  */
-import type { RoadType } from '@/types'
+import type { RoadType, TileData } from '@/types'
 
 export const ROAD_TYPES: RoadType[] = [
   // ─── 阶段一 · 荒野（Lv1）───
@@ -68,4 +68,68 @@ export const ROAD_TYPE_MAP: Record<string, RoadType> = Object.fromEntries(
 /** 获取道路配置 */
 export function getRoadType(id: string): RoadType | undefined {
   return ROAD_TYPE_MAP[id]
+}
+
+// ─── 道路形态（4方向邻居连接判断） ───────────────────────
+
+/**
+ * 道路形态枚举
+ * 用于后续贴图选择：不同形态对应不同等距贴图（直道/弯道/T字/十字）
+ */
+export type RoadShape = 'isolated' | 'endpoint' | 'straight' | 'turn' | 't_junction' | 'cross'
+
+/** 4方向邻居的道路连接状态（n=北/e=东/s=南/w=西） */
+export interface RoadNeighbors {
+  n: boolean
+  e: boolean
+  s: boolean
+  w: boolean
+}
+
+/**
+ * 查询某瓦片4方向邻居是否为道路（任意 roadType 均视为连通，
+ * 不同等级道路可相互衔接，形成统一路网）
+ *
+ * @param tiles 瓦片二维数组
+ * @param x 当前瓦片 x
+ * @param y 当前瓦片 y
+ * @param gridWidth 地图宽
+ * @param gridHeight 地图高
+ */
+export function getRoadNeighbors(
+  tiles: TileData[][],
+  x: number,
+  y: number,
+  gridWidth: number,
+  gridHeight: number
+): RoadNeighbors {
+  const isRoad = (nx: number, ny: number): boolean => {
+    if (nx < 0 || nx >= gridWidth || ny < 0 || ny >= gridHeight) return false
+    return tiles[ny]?.[nx]?.terrain === 'road'
+  }
+  return {
+    n: isRoad(x, y - 1),
+    e: isRoad(x + 1, y),
+    s: isRoad(x, y + 1),
+    w: isRoad(x - 1, y),
+  }
+}
+
+/**
+ * 根据4方向邻居连接状态判断道路形态
+ * - 0 邻居：isolated（孤立）
+ * - 1 邻居：endpoint（端点）
+ * - 2 邻居：对向→straight（直道），垂直→turn（弯道）
+ * - 3 邻居：t_junction（T字路口）
+ * - 4 邻居：cross（十字路口）
+ */
+export function getRoadShape(neighbors: RoadNeighbors): RoadShape {
+  const count = [neighbors.n, neighbors.e, neighbors.s, neighbors.w].filter(Boolean).length
+  if (count === 0) return 'isolated'
+  if (count === 1) return 'endpoint'
+  if (count === 3) return 't_junction'
+  if (count === 4) return 'cross'
+  // count === 2：判断对向（直道）或垂直（弯道）
+  const opposite = (neighbors.n && neighbors.s) || (neighbors.e && neighbors.w)
+  return opposite ? 'straight' : 'turn'
 }

@@ -18,6 +18,15 @@ const PLACEMENT_ERROR_MESSAGES: Record<string, string> = {
   water: '水面不可放置建筑',
 }
 
+/** 铺路错误提示文案 */
+const PAVE_ERROR_MESSAGES: Record<string, string> = {
+  locked: '该区域未解锁',
+  no_fuel: '燃料不足',
+  locked_road: '道路类型未解锁',
+  out_of_bounds: '位置超出地图范围',
+  water: '水面不可铺设道路',
+}
+
 /** 迷雾区域名称 */
 const FOG_REGION_NAMES: Record<string, string> = {
   east: '东区',
@@ -35,6 +44,7 @@ function GamePage() {
   const level = useProgressStore((s) => s.level)
   const { play, muted, toggleMute } = useSound()
   const [selectedBuildingType, setSelectedBuildingType] = useState<string | null>(null)
+  const [selectedRoadType, setSelectedRoadType] = useState<string | null>(null)
   const [toast, setToast] = useState<{
     message: string
     type: 'success' | 'error' | 'info'
@@ -53,15 +63,18 @@ function GamePage() {
     prevLevelRef.current = level
   }, [level, play])
 
-  // ESC 键取消放置模式
+  // ESC 键取消放置/铺路模式
   useEffect(() => {
-    if (!selectedBuildingType) return
+    if (!selectedBuildingType && !selectedRoadType) return
     const onKeydown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setSelectedBuildingType(null)
+      if (e.key === 'Escape') {
+        setSelectedBuildingType(null)
+        setSelectedRoadType(null)
+      }
     }
     window.addEventListener('keydown', onKeydown)
     return () => window.removeEventListener('keydown', onKeydown)
-  }, [selectedBuildingType])
+  }, [selectedBuildingType, selectedRoadType])
 
   // 放置结果回调
   const onPlacementResult = useCallback(
@@ -71,6 +84,21 @@ function GamePage() {
         setToast({ message: '建筑放置成功！XP +10', type: 'success' })
       } else {
         const msg = reason ? (PLACEMENT_ERROR_MESSAGES[reason] ?? '放置失败') : '放置失败'
+        setToast({ message: msg, type: 'error' })
+      }
+      setTimeout(() => setToast(null), 2500)
+    },
+    [play]
+  )
+
+  // 铺路结果回调
+  const onPaveResult = useCallback(
+    (success: boolean, reason?: string) => {
+      if (success) {
+        play('place')
+        setToast({ message: '道路铺设成功！XP +5', type: 'success' })
+      } else {
+        const msg = reason ? (PAVE_ERROR_MESSAGES[reason] ?? '铺设失败') : '铺设失败'
         setToast({ message: msg, type: 'error' })
       }
       setTimeout(() => setToast(null), 2500)
@@ -126,13 +154,17 @@ function GamePage() {
         <main className="relative flex-1">
           <MapView
             placementBuildingType={selectedBuildingType}
+            pavingRoadType={selectedRoadType}
             onPlacementResult={onPlacementResult}
+            onPaveResult={onPaveResult}
           />
 
-          {/* 放置模式提示 */}
-          {selectedBuildingType && (
+          {/* 放置/铺路模式提示 */}
+          {(selectedBuildingType || selectedRoadType) && (
             <div className="pointer-events-none absolute top-4 left-1/2 -translate-x-1/2 rounded-lg bg-bg-deep/80 px-4 py-2 backdrop-blur-sm">
-              <p className="text-sm text-accent-mint">点击地图放置 · ESC 取消</p>
+              <p className="text-sm text-accent-mint">
+                {selectedRoadType ? '点击地图铺设道路 · ESC 取消' : '点击地图放置 · ESC 取消'}
+              </p>
             </div>
           )}
 
@@ -198,6 +230,8 @@ function GamePage() {
           <BuildingPanel
             selectedBuildingType={selectedBuildingType}
             onSelect={setSelectedBuildingType}
+            selectedRoadType={selectedRoadType}
+            onPaveSelect={setSelectedRoadType}
           />
         </aside>
       </div>
@@ -233,6 +267,11 @@ function GamePage() {
               selectedBuildingType={selectedBuildingType}
               onSelect={(t) => {
                 setSelectedBuildingType(t)
+                setMobilePanelOpen(false)
+              }}
+              selectedRoadType={selectedRoadType}
+              onPaveSelect={(r) => {
+                setSelectedRoadType(r)
                 setMobilePanelOpen(false)
               }}
             />

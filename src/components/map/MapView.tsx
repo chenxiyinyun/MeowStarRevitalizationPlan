@@ -21,11 +21,20 @@ const CAT_TICK_INTERVAL_MS = 1000
 interface MapViewProps {
   /** 当前选中的建筑类型 ID（放置模式），null 表示非放置模式 */
   placementBuildingType: string | null
+  /** 当前选中的道路类型 ID（铺路模式），null 表示非铺路模式 */
+  pavingRoadType?: string | null
   /** 放置结果回调（成功/失败时通知父组件） */
   onPlacementResult?: (success: boolean, reason?: string) => void
+  /** 铺路结果回调（成功/失败时通知父组件） */
+  onPaveResult?: (success: boolean, reason?: string) => void
 }
 
-export default function MapView({ placementBuildingType, onPlacementResult }: MapViewProps) {
+export default function MapView({
+  placementBuildingType,
+  pavingRoadType,
+  onPlacementResult,
+  onPaveResult,
+}: MapViewProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const engineRef = useRef<MapEngine | null>(null)
   /** 追踪上一次的迷雾区域状态，用于检测新揭开的区域并触发动画 */
@@ -154,6 +163,27 @@ export default function MapView({ placementBuildingType, onPlacementResult }: Ma
       engine.clearPreview()
     }
   }, [placementBuildingType, onPlacementResult])
+
+  // 铺路模式变化时，更新引擎
+  useEffect(() => {
+    const engine = engineRef.current
+    if (!engine) return
+
+    if (pavingRoadType) {
+      engine.setPavingMode(pavingRoadType, (gx, gy) => {
+        const result = useMapStore.getState().paveRoad(gx, gy, pavingRoadType)
+        if (result.ok) {
+          // tiles 变化通过 mapStore 订阅自动触发 engine.updateTiles
+          onPaveResult?.(true)
+        } else {
+          onPaveResult?.(false, result.reason)
+        }
+      })
+    } else {
+      engine.setPavingMode(null)
+      engine.clearPreview()
+    }
+  }, [pavingRoadType, onPaveResult])
 
   // 订阅 buildingStore 变化，更新引擎建筑渲染
   useEffect(() => {

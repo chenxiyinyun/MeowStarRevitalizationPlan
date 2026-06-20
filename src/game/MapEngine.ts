@@ -28,7 +28,7 @@ import {
   ZOOM_MIN,
 } from '@/types'
 import { getBuildingType } from '@/game/data/buildings'
-import { getRoadType } from '@/game/data/roads'
+import { getRoadType, getRoadNeighbors } from '@/game/data/roads'
 import { getCatType } from '@/game/data/cats'
 import { getMapWorldBounds, gridToScreen, screenToGrid } from './iso'
 
@@ -72,8 +72,10 @@ export class MapEngine {
   private gridHeight: number
   private tileSize: TileSize
 
-  // 放置模式
+  // 放置模式（建筑）
   private placementMode: string | null = null
+  // 铺路模式（道路类型 ID）
+  private pavingMode: string | null = null
   private onTileClick: TileClickCallback | null = null
 
   // 拖拽与缩放状态
@@ -172,27 +174,75 @@ export class MapEngine {
     this.worldContainer.y = this.app.screen.height / 2 - centerY
   }
 
-  /** 创建所有地形瓦片（等距菱形纯色占位） */
+  /** 创建所有地形瓦片（等距菱形纯色占位，道路叠加连接线） */
   private createTiles(): void {
-    const w = this.tileSize.w
-    const h = this.tileSize.h
-
     for (let y = 0; y < this.gridHeight; y++) {
       for (let x = 0; x < this.gridWidth; x++) {
         const tile = this.tiles[y]?.[x]
         if (!tile) continue
 
-        const { sx, sy } = gridToScreen(x, y, this.tileSize)
-        const color = this.getTileColor(tile)
-
         const g = new Graphics()
-        g.poly([sx, sy, sx + w / 2, sy + h / 2, sx, sy + h, sx - w / 2, sy + h / 2])
-        g.fill({ color })
-        g.stroke({ color: TILE_STROKE_COLOR, width: 1, alpha: TILE_STROKE_ALPHA })
+        this.drawTileGraphic(g, tile, x, y)
 
         this.tileLayer.addChild(g)
         this.tileGraphics.set(`${x},${y}`, g)
       }
+    }
+  }
+
+  /**
+   * 绘制单个瓦片图形：等距菱形底色 + 描边；
+   * 若为道路，叠加4方向邻居连接线（直道/弯道/T字/十字形态）
+   */
+  private drawTileGraphic(g: Graphics, tile: TileData, x: number, y: number): void {
+    const w = this.tileSize.w
+    const h = this.tileSize.h
+    const { sx, sy } = gridToScreen(x, y, this.tileSize)
+    const color = this.getTileColor(tile)
+
+    // 菱形底色
+    g.poly([sx, sy, sx + w / 2, sy + h / 2, sx, sy + h, sx - w / 2, sy + h / 2])
+    g.fill({ color })
+    g.stroke({ color: TILE_STROKE_COLOR, width: 1, alpha: TILE_STROKE_ALPHA })
+
+    // 道路连接线（根据4方向邻居）
+    if (tile.terrain === 'road') {
+      this.drawRoadConnectors(g, x, y, sx, sy)
+    }
+  }
+
+  /**
+   * 绘制道路连接线：从瓦片中心向每个有道路邻居的方向画线到对应边中点。
+   * 等距坐标下：北(y-1)→右上边、东(x+1)→右下边、南(y+1)→左下边、西(x-1)→左上边。
+   * 用浅色半透明线表示路面走向，纯色占位阶段即可区分直道/弯道/十字形态。
+   */
+  private drawRoadConnectors(g: Graphics, x: number, y: number, sx: number, sy: number): void {
+    const w = this.tileSize.w
+    const h = this.tileSize.h
+    const centerX = sx
+    const centerY = sy + h / 2
+
+    // 4方向对应菱形边中点
+    const edgeMid = {
+      n: { x: sx + w / 4, y: sy + h / 4 }, // 北 → 东北边中点
+      e: { x: sx + w / 4, y: sy + (3 * h) / 4 }, // 东 → 东南边中点
+      s: { x: sx - w / 4, y: sy + (3 * h) / 4 }, // 南 → 西南边中点
+      w: { x: sx - w / 4, y: sy + h / 4 }, // 西 → 西北边中点
+    }
+
+    const neighbors = getRoadNeighbors(this.tiles, x, y, this.gridWidth, this.gridHeight)
+
+    let hasConnector = false
+    ;(['n', 'e', 's', 'w'] as const).forEach((dir) => {
+      if (neighbors[dir]) {
+        g.moveTo(centerX, centerY)
+        g.lineTo(edgeMid[dir].x, edgeMid[dir].y)
+        hasConnector = true
+      }
+    })
+
+    if (hasConnector) {
+      g.stroke({ color: 0xffffff, width: 3, alpha: 0.4 })
     }
   }
 
@@ -584,10 +634,10 @@ export class MapEngine {
     this.updateViewport()
   }
 
-  /** 更新瓦片数据（迷雾揭开后同步） */
+  /** 更新瓦片数据（迷雾揭开后同步，铺路后道路形态变化也由此刷新） */
   updateTiles(tiles: TileData[][]): void {
     this.tiles = tiles
-    // 更新瓦片颜色（地形可能变化）
+    // 重绘所有瓦片（道路连接线依赖邻居状态，需全量刷新）
     for (let y = 0; y < this.gridHeight; y++) {
       for (let x = 0; x < this.gridWidth; x++) {
         const tile = tiles[y]?.[x]
@@ -595,12 +645,7 @@ export class MapEngine {
         const g = this.tileGraphics.get(`${x},${y}`)
         if (g) {
           g.clear()
-          const { sx, sy } = gridToScreen(x, y, this.tileSize)
-          const w = this.tileSize.w
-          const h = this.tileSize.h
-          g.poly([sx, sy, sx + w / 2, sy + h / 2, sx, sy + h, sx - w / 2, sy + h / 2])
-          g.fill({ color: this.getTileColor(tile) })
-          g.stroke({ color: TILE_STROKE_COLOR, width: 1, alpha: TILE_STROKE_ALPHA })
+          this.drawTileGraphic(g, tile, x, y)
         }
       }
     }
@@ -610,10 +655,15 @@ export class MapEngine {
 
   // ─── 放置模式 ──────────────────────────────────────────
 
-  /** 进入放置模式 */
+  /** 进入放置模式（建筑） */
   setPlacementMode(buildingTypeId: string | null, onTileClick?: TileClickCallback): void {
     this.placementMode = buildingTypeId
     this.onTileClick = onTileClick ?? null
+
+    // 建筑放置与铺路互斥
+    if (buildingTypeId) {
+      this.pavingMode = null
+    }
 
     if (!buildingTypeId) {
       // 退出放置模式，清除预览
@@ -624,12 +674,28 @@ export class MapEngine {
     }
   }
 
-  /** 更新放置预览（跟随鼠标位置） */
-  private updatePreview(canvasX: number, canvasY: number): void {
-    if (!this.placementMode) return
+  /** 进入铺路模式（道路） */
+  setPavingMode(roadTypeId: string | null, onTileClick?: TileClickCallback): void {
+    this.pavingMode = roadTypeId
+    this.onTileClick = onTileClick ?? null
 
-    const buildingType = getBuildingType(this.placementMode)
-    if (!buildingType) return
+    // 铺路与建筑放置互斥
+    if (roadTypeId) {
+      this.placementMode = null
+    }
+
+    if (!roadTypeId) {
+      // 退出铺路模式，清除预览
+      if (this.previewGraphics) {
+        this.previewLayer.removeChildren()
+        this.previewGraphics = null
+      }
+    }
+  }
+
+  /** 更新放置/铺路预览（跟随鼠标位置） */
+  private updatePreview(canvasX: number, canvasY: number): void {
+    if (!this.placementMode && !this.pavingMode) return
 
     // 屏幕坐标 → 世界坐标 → 网格坐标
     const zoom = this.worldContainer.scale.x
@@ -637,9 +703,24 @@ export class MapEngine {
     const worldY = (canvasY - this.worldContainer.y) / zoom
     const { gx, gy } = screenToGrid(worldX, worldY, this.tileSize)
 
-    // 检查是否可放置
     const tile = this.tiles[gy]?.[gx]
-    const canPlace = !!tile && tile.unlocked && !tile.buildingId
+
+    // 根据模式判断可放置性
+    let canPlace = false
+    let previewColor = 0x6ee7b7 // 默认绿色（可放置）
+
+    if (this.placementMode) {
+      // 建筑放置：需解锁、无建筑
+      const buildingType = getBuildingType(this.placementMode)
+      if (!buildingType) return
+      canPlace = !!tile && tile.unlocked && !tile.buildingId
+    } else if (this.pavingMode) {
+      // 铺路：需解锁、非水面（允许在已有道路上升级）
+      const roadType = getRoadType(this.pavingMode)
+      if (!roadType) return
+      canPlace = !!tile && tile.unlocked && tile.terrain !== 'water'
+      previewColor = roadType.color
+    }
 
     // 清除旧预览
     this.previewLayer.removeChildren()
@@ -649,27 +730,30 @@ export class MapEngine {
     const h = this.tileSize.h
 
     const g = new Graphics()
-    const color = canPlace ? 0x6ee7b7 : 0xef5350
-    const alpha = canPlace ? 0.4 : 0.4
+    const color = canPlace ? previewColor : 0xef5350
+    const alpha = 0.4
 
     // 绘制高亮菱形
     g.poly([sx, sy, sx + w / 2, sy + h / 2, sx, sy + h, sx - w / 2, sy + h / 2])
     g.fill({ color, alpha })
     g.stroke({ color, width: 2, alpha: 1 })
 
-    // 如果可放置，绘制建筑预览轮廓
-    if (canPlace && buildingType.height > 2) {
-      g.poly([
-        sx,
-        sy - buildingType.height,
-        sx + w / 2,
-        sy + h / 2 - buildingType.height,
-        sx,
-        sy + h - buildingType.height,
-        sx - w / 2,
-        sy + h / 2 - buildingType.height,
-      ])
-      g.stroke({ color, width: 1, alpha: 0.6 })
+    // 建筑放置模式下，绘制建筑预览轮廓
+    if (canPlace && this.placementMode) {
+      const buildingType = getBuildingType(this.placementMode)
+      if (buildingType && buildingType.height > 2) {
+        g.poly([
+          sx,
+          sy - buildingType.height,
+          sx + w / 2,
+          sy + h / 2 - buildingType.height,
+          sx,
+          sy + h - buildingType.height,
+          sx - w / 2,
+          sy + h / 2 - buildingType.height,
+        ])
+        g.stroke({ color, width: 1, alpha: 0.6 })
+      }
     }
 
     this.previewLayer.addChild(g)
@@ -751,8 +835,8 @@ export class MapEngine {
       this.updateViewport()
     }
 
-    // 放置模式下更新预览
-    if (this.placementMode && !this.isPinching) {
+    // 放置/铺路模式下更新预览
+    if ((this.placementMode || this.pavingMode) && !this.isPinching) {
       const pt = this.getCanvasPoint(e)
       this.updatePreview(pt.x, pt.y)
     }
@@ -769,13 +853,13 @@ export class MapEngine {
       const worldX = (pt.x - this.worldContainer.x) / zoom
       const worldY = (pt.y - this.worldContainer.y) / zoom
 
-      if (this.placementMode && this.onTileClick) {
+      if ((this.placementMode || this.pavingMode) && this.onTileClick) {
         const { gx, gy } = screenToGrid(worldX, worldY, this.tileSize)
         if (gx >= 0 && gx < this.gridWidth && gy >= 0 && gy < this.gridHeight) {
           this.onTileClick(gx, gy)
         }
-      } else if (!this.placementMode) {
-        // 非放置模式：检测猫咪点击
+      } else if (!this.placementMode && !this.pavingMode) {
+        // 非放置/铺路模式：检测猫咪点击
         this.handleCatClick(worldX, worldY)
       }
     }
@@ -798,7 +882,7 @@ export class MapEngine {
 
   private onPointerLeave = (): void => {
     // 鼠标离开 canvas 时清除预览
-    if (this.placementMode) {
+    if (this.placementMode || this.pavingMode) {
       this.clearPreview()
     }
   }
