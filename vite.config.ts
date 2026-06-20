@@ -14,10 +14,18 @@ export default defineConfig({
     // 分离第三方库，避免单个 chunk 过大
     rollupOptions: {
       output: {
-        manualChunks: {
-          react: ['react', 'react-dom', 'react-router-dom'],
-          pixi: ['pixi.js'],
-          gsap: ['gsap'],
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('pixi.js')) return 'pixi'
+            if (id.includes('gsap')) return 'gsap'
+            if (
+              id.includes('react') ||
+              id.includes('react-dom') ||
+              id.includes('react-router') ||
+              id.includes('scheduler')
+            )
+              return 'react'
+          }
         },
       },
     },
