@@ -286,20 +286,31 @@ export const useBuildingStore = create<BuildingStore>((set, get) => ({
     mapStore.setTileBuilding(fromX, fromY, undefined)
     mapStore.setTileBuilding(toX, toY, building.id)
     set((state) => ({
-      buildings: state.buildings.map((b) =>
-        b.id === building.id ? { ...b, x: toX, y: toY } : b
-      ),
+      buildings: state.buildings.map((b) => (b.id === building.id ? { ...b, x: toX, y: toY } : b)),
       lastMove: { ok: true, buildingName },
     }))
 
     return { ok: true, buildingName }
   },
 
-  clearLastAction: () => set({ lastPlaced: null, lastPlacementError: null, lastDemolish: null, lastMove: null }),
+  clearLastAction: () =>
+    set({ lastPlaced: null, lastPlacementError: null, lastDemolish: null, lastMove: null }),
 
   hydrate: (buildings) =>
-    set({ buildings, lastPlaced: null, lastPlacementError: null, lastDemolish: null, lastMove: null }),
+    set({
+      buildings,
+      lastPlaced: null,
+      lastPlacementError: null,
+      lastDemolish: null,
+      lastMove: null,
+    }),
 
   reset: () =>
-    set({ buildings: [], lastPlaced: null, lastPlacementError: null, lastDemolish: null, lastMove: null }),
+    set({
+      buildings: [],
+      lastPlaced: null,
+      lastPlacementError: null,
+      lastDemolish: null,
+      lastMove: null,
+    }),
 }))

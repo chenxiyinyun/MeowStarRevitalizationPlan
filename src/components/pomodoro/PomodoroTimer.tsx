@@ -19,11 +19,7 @@ import { usePomodoroCompletionNotification } from '@/hooks/useNotification'
 import { useSound } from '@/hooks/useSound'
 import { formatMsToMMSS } from '@/utils/time'
 import { getLevelProgress } from '@/utils/level'
-import {
-  POMODORO_DURATION_PRESETS,
-  POMODORO_DURATION_MIN,
-  POMODORO_DURATION_MAX,
-} from '@/types'
+import { POMODORO_DURATION_PRESETS, POMODORO_DURATION_MIN, POMODORO_DURATION_MAX } from '@/types'
 import CircularProgress from './CircularProgress'
 import CompletionModal from './CompletionModal'
 

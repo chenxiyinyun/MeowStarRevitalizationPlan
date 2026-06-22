@@ -17,20 +17,14 @@ import { Application, Container, Graphics, Text } from 'pixi.js'
 import gsap from 'gsap'
 import type { BuildingInstance, Camera, CatInstance, FogRegion, TileData, TileSize } from '@/types'
 import { prefersReducedMotion } from '@/hooks/useReducedMotion'
-import {
-  FOG_ALPHA,
-  FOG_COLOR,
-  PAN_PADDING,
-  TILE_STROKE_ALPHA,
-  TILE_STROKE_COLOR,
-  TERRAIN_COLORS,
-  ZOOM_MAX,
-  ZOOM_MIN,
-} from '@/types'
+import { FOG_ALPHA, FOG_COLOR, PAN_PADDING, ZOOM_MAX, ZOOM_MIN } from '@/types'
 import { getBuildingType } from '@/game/data/buildings'
 import { getRoadType, getRoadNeighbors } from '@/game/data/roads'
 import { getCatType } from '@/game/data/cats'
 import { getMapWorldBounds, gridToScreen, screenToGrid } from './iso'
+import { drawTerrain, drawRoad } from '@/game/render/tileRenderer'
+import { drawBuilding } from '@/game/render/buildingRenderer'
+import { drawCat as drawCatSprite } from '@/game/render/catRenderer'
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value))
@@ -57,8 +51,8 @@ export class MapEngine {
   private catLayer: Container
   private fogLayer: Container
   private previewLayer: Container
-  private tileGraphics: Map<string, Graphics> = new Map()
-  private buildingGraphics: Map<string, Graphics> = new Map()
+  private tileContainers: Map<string, Container> = new Map()
+  private buildingGraphics: Map<string, Container> = new Map()
   private fogGraphics: Map<string, Graphics> = new Map()
   private catContainers: Map<string, Container> = new Map()
   private catDialogs: Map<string, Container> = new Map()
@@ -83,7 +77,9 @@ export class MapEngine {
   // 移动模式选中的建筑（第一步选中，第二步选目标位置）
   private moveSelectedBuilding: { x: number; y: number; buildingId: string } | null = null
   // 移动完成回调
-  private onMoveComplete: ((fromX: number, fromY: number, toX: number, toY: number) => void) | null = null
+  private onMoveComplete:
+    | ((fromX: number, fromY: number, toX: number, toY: number) => void)
+    | null = null
   private onTileClick: TileClickCallback | null = null
 
   // 拖拽与缩放状态
@@ -182,85 +178,32 @@ export class MapEngine {
     this.worldContainer.y = this.app.screen.height / 2 - centerY
   }
 
-  /** 创建所有地形瓦片（等距菱形纯色占位，道路叠加连接线） */
+  /** 创建所有地形瓦片（真实图片或纯色占位，道路叠加连接线） */
   private createTiles(): void {
     for (let y = 0; y < this.gridHeight; y++) {
       for (let x = 0; x < this.gridWidth; x++) {
         const tile = this.tiles[y]?.[x]
         if (!tile) continue
 
-        const g = new Graphics()
-        this.drawTileGraphic(g, tile, x, y)
+        const container = new Container()
+        this.drawTileGraphic(container, tile, x, y)
 
-        this.tileLayer.addChild(g)
-        this.tileGraphics.set(`${x},${y}`, g)
+        this.tileLayer.addChild(container)
+        this.tileContainers.set(`${x},${y}`, container)
       }
     }
   }
 
-  /**
-   * 绘制单个瓦片图形：等距菱形底色 + 描边；
-   * 若为道路，叠加4方向邻居连接线（直道/弯道/T字/十字形态）
-   */
-  private drawTileGraphic(g: Graphics, tile: TileData, x: number, y: number): void {
-    const w = this.tileSize.w
-    const h = this.tileSize.h
+  private drawTileGraphic(container: Container, tile: TileData, x: number, y: number): void {
+    container.removeChildren()
     const { sx, sy } = gridToScreen(x, y, this.tileSize)
-    const color = this.getTileColor(tile)
 
-    // 菱形底色
-    g.poly([sx, sy, sx + w / 2, sy + h / 2, sx, sy + h, sx - w / 2, sy + h / 2])
-    g.fill({ color })
-    g.stroke({ color: TILE_STROKE_COLOR, width: 1, alpha: TILE_STROKE_ALPHA })
-
-    // 道路连接线（根据4方向邻居）
     if (tile.terrain === 'road') {
-      this.drawRoadConnectors(g, x, y, sx, sy)
+      const neighbors = getRoadNeighbors(this.tiles, x, y, this.gridWidth, this.gridHeight)
+      drawRoad(container, neighbors, tile.roadType, sx, sy, this.tileSize)
+    } else {
+      drawTerrain(container, tile.terrain, sx, sy, this.tileSize)
     }
-  }
-
-  /**
-   * 绘制道路连接线：从瓦片中心向每个有道路邻居的方向画线到对应边中点。
-   * 等距坐标下：北(y-1)→右上边、东(x+1)→右下边、南(y+1)→左下边、西(x-1)→左上边。
-   * 用浅色半透明线表示路面走向，纯色占位阶段即可区分直道/弯道/十字形态。
-   */
-  private drawRoadConnectors(g: Graphics, x: number, y: number, sx: number, sy: number): void {
-    const w = this.tileSize.w
-    const h = this.tileSize.h
-    const centerX = sx
-    const centerY = sy + h / 2
-
-    // 4方向对应菱形边中点
-    const edgeMid = {
-      n: { x: sx + w / 4, y: sy + h / 4 }, // 北 → 东北边中点
-      e: { x: sx + w / 4, y: sy + (3 * h) / 4 }, // 东 → 东南边中点
-      s: { x: sx - w / 4, y: sy + (3 * h) / 4 }, // 南 → 西南边中点
-      w: { x: sx - w / 4, y: sy + h / 4 }, // 西 → 西北边中点
-    }
-
-    const neighbors = getRoadNeighbors(this.tiles, x, y, this.gridWidth, this.gridHeight)
-
-    let hasConnector = false
-    ;(['n', 'e', 's', 'w'] as const).forEach((dir) => {
-      if (neighbors[dir]) {
-        g.moveTo(centerX, centerY)
-        g.lineTo(edgeMid[dir].x, edgeMid[dir].y)
-        hasConnector = true
-      }
-    })
-
-    if (hasConnector) {
-      g.stroke({ color: 0xffffff, width: 3, alpha: 0.4 })
-    }
-  }
-
-  /** 获取瓦片渲染颜色（道路使用 roadType 对应的颜色） */
-  private getTileColor(tile: TileData): number {
-    if (tile.terrain === 'road' && tile.roadType) {
-      const roadType = getRoadType(tile.roadType)
-      if (roadType) return roadType.color
-    }
-    return TERRAIN_COLORS[tile.terrain]
   }
 
   // ─── 建筑渲染 ──────────────────────────────────────────
@@ -271,9 +214,8 @@ export class MapEngine {
     this.renderBuildings()
   }
 
-  /** 渲染所有建筑（等距立方体占位，按 x+y 深度排序） */
+  /** 渲染所有建筑（按 category 分发渲染器，按 x+y 深度排序） */
   private renderBuildings(): void {
-    // 清除旧建筑
     this.buildingLayer.removeChildren()
     this.buildingGraphics.clear()
 
@@ -285,63 +227,14 @@ export class MapEngine {
       if (!tile) continue
 
       const { sx, sy } = gridToScreen(building.x, building.y, this.tileSize)
-      const g = this.drawIsoBox(sx, sy, buildingType.color, buildingType.height)
-
-      // 等距深度排序：x+y 越大越靠前
-      g.zIndex = building.x + building.y
-      this.buildingLayer.addChild(g)
-      this.buildingGraphics.set(building.id, g)
+      const container = new Container()
+      drawBuilding(container, buildingType, sx, sy, this.tileSize)
+      container.zIndex = building.x + building.y
+      this.buildingLayer.addChild(container)
+      this.buildingGraphics.set(building.id, container)
     }
 
     this.updateViewport()
-  }
-
-  /**
-   * 绘制等距立方体建筑
-   * @param sx 瓦片顶部顶点 x
-   * @param sy 瓦片顶部顶点 y
-   * @param color 建筑颜色
-   * @param height 建筑高度（像素）
-   */
-  private drawIsoBox(sx: number, sy: number, color: number, height: number): Graphics {
-    const w = this.tileSize.w
-    const h = this.tileSize.h
-    const g = new Graphics()
-
-    // 底部菱形四个点
-    const right = { x: sx + w / 2, y: sy + h / 2 }
-    const bottom = { x: sx, y: sy + h }
-    const left = { x: sx - w / 2, y: sy + h / 2 }
-
-    // 顶部菱形四个点（上移 height）
-    const topTop = { x: sx, y: sy - height }
-    const topRight = { x: sx + w / 2, y: sy + h / 2 - height }
-    const topLeft = { x: sx - w / 2, y: sy + h / 2 - height }
-
-    // 左墙面（较暗）
-    const darkColor = this.darkenColor(color, 0.7)
-    g.poly([left.x, left.y, bottom.x, bottom.y, sx, sy + h - height, topLeft.x, topLeft.y])
-    g.fill({ color: darkColor })
-
-    // 右墙面（中等亮度）
-    const midColor = this.darkenColor(color, 0.85)
-    g.poly([right.x, right.y, bottom.x, bottom.y, sx, sy + h - height, topRight.x, topRight.y])
-    g.fill({ color: midColor })
-
-    // 顶部菱形（最亮）
-    g.poly([topTop.x, topTop.y, topRight.x, topRight.y, sx, sy + h - height, topLeft.x, topLeft.y])
-    g.fill({ color })
-    g.stroke({ color: TILE_STROKE_COLOR, width: 1, alpha: TILE_STROKE_ALPHA })
-
-    return g
-  }
-
-  /** 颜色变暗工具 */
-  private darkenColor(color: number, factor: number): number {
-    const r = Math.floor(((color >> 16) & 0xff) * factor)
-    const g = Math.floor(((color >> 8) & 0xff) * factor)
-    const b = Math.floor((color & 0xff) * factor)
-    return (r << 16) | (g << 8) | b
   }
 
   // ─── 猫咪渲染 ──────────────────────────────────────────
@@ -417,47 +310,23 @@ export class MapEngine {
   }
 
   /**
-   * 绘制猫咪（纯色圆形 + 猫耳三角形 + 眼睛）
+   * 绘制猫咪（委托给 catRenderer，按 state 切换 idle/walk 姿态）
    */
   private drawCat(cat: CatInstance): Container {
     const catType = getCatType(cat.typeId)
-    const color = catType?.color ?? 0xffffff
-    const container = new Container()
-
-    const g = new Graphics()
-    // 身体（圆形）
-    g.circle(0, 0, 10)
-    g.fill({ color })
-    g.stroke({ color: 0x000000, width: 1, alpha: 0.3 })
-
-    // 左耳（三角形）
-    g.poly([-9, -5, -5, -13, -2, -5])
-    g.fill({ color })
-    g.stroke({ color: 0x000000, width: 1, alpha: 0.3 })
-
-    // 右耳（三角形）
-    g.poly([9, -5, 5, -13, 2, -5])
-    g.fill({ color })
-    g.stroke({ color: 0x000000, width: 1, alpha: 0.3 })
-
-    // 耳朵内侧（粉色）
-    g.poly([-7, -6, -5, -10, -3, -6])
-    g.fill({ color: 0xffcdd2 })
-    g.poly([7, -6, 5, -10, 3, -6])
-    g.fill({ color: 0xffcdd2 })
-
-    // 眼睛（两个小黑圆）
-    g.circle(-3, -1, 1.5)
-    g.fill({ color: 0x1a1a2e })
-    g.circle(3, -1, 1.5)
-    g.fill({ color: 0x1a1a2e })
-
-    // 鼻子（小粉色三角）
-    g.poly([-1.5, 2, 1.5, 2, 0, 4])
-    g.fill({ color: 0xff8a80 })
-
-    container.addChild(g)
-    return container
+    const state: 'idle' | 'walk' = cat.state === 'walking' ? 'walk' : 'idle'
+    return drawCatSprite(
+      catType ?? {
+        id: '',
+        name: '',
+        personality: 'playful',
+        dialogPool: [],
+        moveIntervalMs: 0,
+        color: 0xffffff,
+        unlockCondition: { type: 'initial' },
+      },
+      state
+    )
   }
 
   /**
@@ -650,10 +519,9 @@ export class MapEngine {
       for (let x = 0; x < this.gridWidth; x++) {
         const tile = tiles[y]?.[x]
         if (!tile) continue
-        const g = this.tileGraphics.get(`${x},${y}`)
-        if (g) {
-          g.clear()
-          this.drawTileGraphic(g, tile, x, y)
+        const container = this.tileContainers.get(`${x},${y}`)
+        if (container) {
+          this.drawTileGraphic(container, tile, x, y)
         }
       }
     }
@@ -826,14 +694,9 @@ export class MapEngine {
         previewColor = 0x60a5fa // 蓝色表示可选中
       } else {
         // 第二步：选择目标位置
-        const isSamePos =
-          gx === this.moveSelectedBuilding.x && gy === this.moveSelectedBuilding.y
+        const isSamePos = gx === this.moveSelectedBuilding.x && gy === this.moveSelectedBuilding.y
         canAct =
-          !!tile &&
-          tile.unlocked &&
-          !tile.buildingId &&
-          tile.terrain !== 'water' &&
-          !isSamePos
+          !!tile && tile.unlocked && !tile.buildingId && tile.terrain !== 'water' && !isSamePos
         previewColor = canAct ? 0x6ee7b7 : 0xef5350
       }
     }
@@ -1010,7 +873,10 @@ export class MapEngine {
     }
 
     // 放置/铺路/拆除/移动模式下更新预览
-    if ((this.placementMode || this.pavingMode || this.demolishMode || this.moveMode) && !this.isPinching) {
+    if (
+      (this.placementMode || this.pavingMode || this.demolishMode || this.moveMode) &&
+      !this.isPinching
+    ) {
       const pt = this.getCanvasPoint(e)
       this.updatePreview(pt.x, pt.y)
     }
@@ -1148,8 +1014,8 @@ export class MapEngine {
     for (let y = 0; y < this.gridHeight; y++) {
       for (let x = 0; x < this.gridWidth; x++) {
         const visible = x >= minGx && x <= maxGx && y >= minGy && y <= maxGy
-        const tileG = this.tileGraphics.get(`${x},${y}`)
-        if (tileG) tileG.visible = visible
+        const tileContainer = this.tileContainers.get(`${x},${y}`)
+        if (tileContainer) tileContainer.visible = visible
         const fogG = this.fogGraphics.get(`${x},${y}`)
         if (fogG) fogG.visible = visible
       }
@@ -1243,7 +1109,7 @@ export class MapEngine {
 
     this.resizeObserver?.disconnect()
     this.resizeObserver = null
-    this.tileGraphics.clear()
+    this.tileContainers.clear()
     this.buildingGraphics.clear()
     this.fogGraphics.clear()
     this.pointers.clear()

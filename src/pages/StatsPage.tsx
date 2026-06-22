@@ -418,9 +418,7 @@ function StatsPage() {
             <div>
               <div className="text-xs text-text-dim">日均番茄钟</div>
               <div className="mt-1 font-medium text-text-primary">
-                {registeredDays > 0
-                  ? (progress.totalPomodoros / registeredDays).toFixed(1)
-                  : '0'}
+                {registeredDays > 0 ? (progress.totalPomodoros / registeredDays).toFixed(1) : '0'}
               </div>
             </div>
             <div>

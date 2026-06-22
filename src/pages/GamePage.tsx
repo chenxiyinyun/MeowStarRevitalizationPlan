@@ -236,11 +236,7 @@ function GamePage() {
             <div className="pointer-events-none absolute top-4 left-1/2 -translate-x-1/2 rounded-lg bg-bg-deep/80 px-4 py-2 backdrop-blur-sm">
               <p
                 className={`text-sm ${
-                  demolishMode
-                    ? 'text-red-400'
-                    : moveMode
-                      ? 'text-blue-400'
-                      : 'text-accent-mint'
+                  demolishMode ? 'text-red-400' : moveMode ? 'text-blue-400' : 'text-accent-mint'
                 }`}
               >
                 {demolishMode

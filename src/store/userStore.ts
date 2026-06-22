@@ -47,8 +47,7 @@ export const useUserStore = create<UserStore>((set, get) => ({
     return profile
   },
 
-  hydrate: (profile, settings) =>
-    set({ profile, settings: { ...DEFAULT_SETTINGS, ...settings } }),
+  hydrate: (profile, settings) => set({ profile, settings: { ...DEFAULT_SETTINGS, ...settings } }),
 
   setNickname: (nickname) => {
     const profile = get().profile
