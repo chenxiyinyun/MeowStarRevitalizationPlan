@@ -1,15 +1,3 @@
-/**
- * 番茄钟主组件
- * 依据：development-design.md 5.1 番茄钟系统、6.2 番茄钟完整流程
- *
- * 集成：
- * - 环形进度 + 剩余时间显示（M1-3）
- * - 开始/暂停/恢复/重置控制（M1-3）
- * - 完成弹窗（M1-6，通过 CompletionModal）
- * - Web Notification（M1-6，通过 usePomodoroCompletionNotification）
- * - 后台计时校准（M1-7，通过 useVisibilityCalibration）
- * - 状态栏显示燃料/XP/等级（M1-4 奖励反馈）
- */
 import { usePomodoroStore } from '@/store/pomodoroStore'
 import { useProgressStore } from '@/store/progressStore'
 import { useUserStore } from '@/store/userStore'
@@ -31,18 +19,15 @@ export default function PomodoroTimer() {
   const reset = usePomodoroStore((s) => s.reset)
   const { play } = useSound()
 
-  // 用户设置中的番茄钟时长
   const pomodoroDurationMin = useUserStore((s) => s.settings.pomodoroDurationMin)
   const updateSettings = useUserStore((s) => s.updateSettings)
 
-  // 状态栏数据
   const fuel = useProgressStore((s) => s.fuel)
   const xp = useProgressStore((s) => s.xp)
   const level = useProgressStore((s) => s.level)
   const totalPomodoros = useProgressStore((s) => s.totalPomodoros)
   const levelProgress = getLevelProgress(xp)
 
-  // 启用后台校准与完成通知
   useVisibilityCalibration()
   usePomodoroCompletionNotification()
 
@@ -52,57 +37,51 @@ export default function PomodoroTimer() {
 
   return (
     <div className="flex h-full flex-col">
-      {/* 状态栏 */}
-      <div className="flex items-center justify-between rounded-xl border border-border-subtle bg-bg-card px-4 py-3">
-        <div className="flex items-center gap-2">
-          <span className="text-lg">⛽</span>
-          <div className="flex flex-col">
-            <span className="text-xs text-text-dim">燃料</span>
-            <span className="font-bold text-accent-orange">{fuel}</span>
+      <div className="wood-texture border-b-4 border-wood-dark px-3 py-2 mb-3">
+        <h2 className="font-display text-lg text-cream text-center">🍅 专注番茄钟</h2>
+      </div>
+
+      <div className="pixel-panel p-3 mb-3">
+        <div className="grid grid-cols-3 gap-2 text-center">
+          <div>
+            <div className="text-xl">⛽</div>
+            <div className="text-[10px] text-text-dim">燃料</div>
+            <div className="font-display text-lg text-accent-orange">{fuel}</div>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-lg">⭐</span>
-          <div className="flex flex-col">
-            <span className="text-xs text-text-dim">等级</span>
-            <span className="font-bold text-accent-lavender">Lv{level}</span>
+          <div className="border-x-2 border-wood-light">
+            <div className="text-xl">⭐</div>
+            <div className="text-[10px] text-text-dim">等级</div>
+            <div className="font-display text-lg text-accent-lavender">Lv.{level}</div>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-lg">🍅</span>
-          <div className="flex flex-col">
-            <span className="text-xs text-text-dim">已完成</span>
-            <span className="font-bold text-accent-mint">{totalPomodoros}</span>
+          <div>
+            <div className="text-xl">🍅</div>
+            <div className="text-[10px] text-text-dim">完成</div>
+            <div className="font-display text-lg text-accent-mint">{totalPomodoros}</div>
           </div>
         </div>
       </div>
 
-      {/* 等级进度条 */}
-      <div className="mt-2 px-1">
-        <div className="flex justify-between text-xs text-text-dim">
-          <span>Lv{levelProgress.level}</span>
-          <span>
-            {xp - levelProgress.currentLevelXp} /{' '}
-            {levelProgress.nextLevelXp - levelProgress.currentLevelXp} XP
-          </span>
-          <span>Lv{levelProgress.level + 1}</span>
+      <div className="px-1 mb-4">
+        <div className="flex justify-between text-[10px] font-display text-text-dim">
+          <span>Lv.{levelProgress.level}</span>
+          <span>{xp - levelProgress.currentLevelXp}/{levelProgress.nextLevelXp - levelProgress.currentLevelXp}</span>
+          <span>Lv.{levelProgress.level + 1}</span>
         </div>
-        <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-bg-card">
+        <div className="mt-1 h-3 border-2 border-wood-dark bg-bg-cream">
           <div
-            className="h-full rounded-full bg-accent-lavender transition-all duration-500"
+            className="h-full bg-gradient-to-r from-accent-mint to-accent-sky transition-all duration-500"
             style={{ width: `${levelProgress.progress * 100}%` }}
           />
         </div>
       </div>
 
-      {/* 番茄钟主体 */}
       <div className="flex flex-1 flex-col items-center justify-center">
         <CircularProgress
           progress={progress}
           label={formatMsToMMSS(remainingMs)}
           sublabel={
             phase === 'idle'
-              ? '准备开始专注'
+              ? '准备开始'
               : phase === 'running'
                 ? '专注中…'
                 : phase === 'paused'
@@ -112,11 +91,10 @@ export default function PomodoroTimer() {
           dimmed={isPaused}
         />
 
-        {/* 时长选择（仅 idle 阶段显示） */}
         {phase === 'idle' && (
-          <div className="mt-6 flex flex-col items-center gap-2">
-            <span className="text-xs text-text-dim">专注时长</span>
-            <div className="flex gap-2">
+          <div className="mt-5 flex flex-col items-center gap-2 w-full px-2">
+            <span className="text-xs font-display text-text-dim">⏱️ 选择专注时长</span>
+            <div className="flex flex-wrap justify-center gap-1.5">
               {POMODORO_DURATION_PRESETS.map((min) => (
                 <button
                   key={min}
@@ -124,24 +102,22 @@ export default function PomodoroTimer() {
                     play('click')
                     updateSettings({ pomodoroDurationMin: min })
                   }}
-                  className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-all ${
+                  className={`px-2.5 py-1.5 text-xs font-display border-2 border-wood-dark transition-all ${
                     pomodoroDurationMin === min
-                      ? 'bg-accent-orange text-white'
-                      : 'border border-border-subtle bg-bg-card text-text-secondary hover:border-accent-orange/50 hover:text-text-primary'
+                      ? 'bg-accent-orange text-white shadow-button-pressed translate-y-0.5'
+                      : 'bg-bg-card text-text-secondary shadow-button hover:bg-accent-peach'
                   }`}
                 >
-                  {min} 分钟
+                  {min}分
                 </button>
               ))}
-              <label
-                className={`flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium transition-all ${
+              <div
+                className={`flex items-center gap-0.5 px-2 py-1.5 text-xs font-display border-2 border-wood-dark transition-all ${
                   !POMODORO_DURATION_PRESETS.includes(pomodoroDurationMin as 15 | 25 | 45)
-                    ? 'bg-accent-orange text-white'
-                    : 'border border-border-subtle bg-bg-card text-text-secondary hover:border-accent-orange/50 hover:text-text-primary'
+                    ? 'bg-accent-orange text-white shadow-button-pressed translate-y-0.5'
+                    : 'bg-bg-card text-text-secondary shadow-button hover:bg-accent-peach'
                 }`}
-                title={`自定义 ${POMODORO_DURATION_MIN}-${POMODORO_DURATION_MAX} 分钟`}
               >
-                <span>自定义</span>
                 <input
                   type="number"
                   min={POMODORO_DURATION_MIN}
@@ -150,34 +126,29 @@ export default function PomodoroTimer() {
                   onChange={(e) => {
                     const v = parseInt(e.target.value, 10)
                     if (Number.isFinite(v)) {
-                      const clamped = Math.min(
-                        Math.max(v, POMODORO_DURATION_MIN),
-                        POMODORO_DURATION_MAX
-                      )
+                      const clamped = Math.min(Math.max(v, POMODORO_DURATION_MIN), POMODORO_DURATION_MAX)
                       updateSettings({ pomodoroDurationMin: clamped })
                     }
                   }}
-                  className="w-12 bg-transparent text-center outline-none"
+                  className="w-8 bg-transparent text-center outline-none font-display"
                   style={{ color: 'inherit' }}
                 />
-                <span className="text-xs">分</span>
-              </label>
+                <span>分</span>
+              </div>
             </div>
           </div>
         )}
 
-        {/* 控制按钮 */}
-        <div className="mt-8 flex gap-3">
+        <div className="mt-6 flex gap-2">
           {phase === 'idle' && (
             <button
               onClick={() => {
                 play('click')
                 start()
               }}
-              className="rounded-xl bg-accent-orange px-10 py-3 text-lg font-medium text-white transition-all hover:scale-105 hover:bg-accent-coral"
-              style={{ boxShadow: '0 0 20px var(--glow-orange)' }}
+              className="pixel-btn text-base px-8 py-2.5"
             >
-              开始专注
+              🍅 开始专注
             </button>
           )}
 
@@ -188,18 +159,18 @@ export default function PomodoroTimer() {
                   play('click')
                   pause()
                 }}
-                className="rounded-xl bg-bg-card px-8 py-3 font-medium text-text-primary transition-colors hover:bg-bg-card-hover"
+                className="pixel-btn-yellow text-sm px-6 py-2.5"
               >
-                暂停
+                ⏸️ 暂停
               </button>
               <button
                 onClick={() => {
                   play('click')
                   reset()
                 }}
-                className="rounded-xl border border-border-subtle px-6 py-3 font-medium text-text-secondary transition-colors hover:text-text-primary"
+                className="pixel-btn-secondary text-sm px-5 py-2.5"
               >
-                重置
+                ↺ 重置
               </button>
             </>
           )}
@@ -211,36 +182,35 @@ export default function PomodoroTimer() {
                   play('click')
                   resume()
                 }}
-                className="rounded-xl bg-accent-orange px-8 py-3 font-medium text-white transition-all hover:scale-105 hover:bg-accent-coral"
-                style={{ boxShadow: '0 0 20px var(--glow-orange)' }}
+                className="pixel-btn-mint text-sm px-6 py-2.5"
               >
-                恢复
+                ▶️ 继续
               </button>
               <button
                 onClick={() => {
                   play('click')
                   reset()
                 }}
-                className="rounded-xl border border-border-subtle px-6 py-3 font-medium text-text-secondary transition-colors hover:text-text-primary"
+                className="pixel-btn-secondary text-sm px-5 py-2.5"
               >
-                重置
+                ↺ 重置
               </button>
             </>
           )}
         </div>
 
-        {/* 提示文案 */}
         {phase === 'idle' && (
-          <p className="mt-4 text-sm text-text-dim">
-            完成 {pomodoroDurationMin} 分钟专注，获得 3 燃料与 50 经验值
+          <p className="mt-4 text-[11px] text-text-dim text-center px-2">
+            ✨ 完成专注获得 3 燃料 + 50 经验
           </p>
         )}
         {isActive && (
-          <p className="mt-4 text-sm text-text-dim">切到其他标签页也不影响计时，回来会自动校准</p>
+          <p className="mt-4 text-[11px] text-text-dim text-center px-2">
+            💡 后台计时自动校准，切标签也不丢进度
+          </p>
         )}
       </div>
 
-      {/* 完成弹窗 */}
       <CompletionModal />
     </div>
   )

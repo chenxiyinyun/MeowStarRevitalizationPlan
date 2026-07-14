@@ -73,6 +73,7 @@ export function collectSaveData(): SaveData {
       fuel: progressStore.fuel,
       totalFocusMinutes: progressStore.totalFocusMinutes,
       totalPomodoros: progressStore.totalPomodoros,
+      population: progressStore.population,
     },
     map: mapStore.initialized
       ? {

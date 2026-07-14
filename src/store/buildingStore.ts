@@ -8,12 +8,23 @@
  * - 放置成功后扣燃料、写入瓦片、发放 XP
  */
 import { create } from 'zustand'
-import type { BuildingInstance, PlacementResult, DemolishResult, MoveResult } from '@/types'
+import type { BuildingInstance, PlacementResult, DemolishResult, MoveResult, ZoneType } from '@/types'
 import { PLACE_BUILDING_XP, ADJACENT_ROAD_BONUS_RATE, DEMOLISH_FUEL_REFUND_RATE } from '@/types'
-import { getBuildingType } from '@/game/data/buildings'
+import { getBuildingType, getAutoBuildingsForZone } from '@/game/data/buildings'
 import { isAdjacentToRoad } from '@/game/data/roads'
 import { useProgressStore } from './progressStore'
 import { useMapStore } from './mapStore'
+
+function calculatePopulation(buildings: BuildingInstance[]): number {
+  let population = 0
+  for (const building of buildings) {
+    const buildingType = getBuildingType(building.typeId)
+    if (buildingType?.category === 'residence' && buildingType.capacity) {
+      population += buildingType.capacity
+    }
+  }
+  return population
+}
 
 interface BuildingStore {
   buildings: BuildingInstance[]
@@ -52,6 +63,8 @@ interface BuildingStore {
   hydrate: (buildings: BuildingInstance[]) => void
   /** 重置 */
   reset: () => void
+  /** 处理规划区域：自动在邻路的规划区域生成建筑 */
+  processZones: () => void
 }
 
 /** 生成唯一建筑实例 ID */
@@ -150,11 +163,16 @@ export const useBuildingStore = create<BuildingStore>((set, get) => ({
     // 写入瓦片
     mapStore.setTileBuilding(x, y, instance.id)
 
-    set((state) => ({
-      buildings: [...state.buildings, instance],
-      lastPlaced: instance,
-      lastPlacementError: null,
-    }))
+    set((state) => {
+      const newBuildings = [...state.buildings, instance]
+      const newPopulation = calculatePopulation(newBuildings)
+      progressStore.setPopulation(newPopulation)
+      return {
+        buildings: newBuildings,
+        lastPlaced: instance,
+        lastPlacementError: null,
+      }
+    })
 
     return { ok: true, bonusXp: bonusXp || undefined, adjacentToRoad: adjacentToRoad || undefined }
   },
@@ -207,10 +225,15 @@ export const useBuildingStore = create<BuildingStore>((set, get) => ({
 
     // 清空瓦片 buildingId、移除建筑实例
     mapStore.setTileBuilding(x, y, undefined)
-    set((state) => ({
-      buildings: state.buildings.filter((b) => b.id !== building.id),
-      lastDemolish: { ok: true, refundedFuel, buildingName },
-    }))
+    set((state) => {
+      const newBuildings = state.buildings.filter((b) => b.id !== building.id)
+      const newPopulation = calculatePopulation(newBuildings)
+      progressStore.setPopulation(newPopulation)
+      return {
+        buildings: newBuildings,
+        lastDemolish: { ok: true, refundedFuel, buildingName },
+      }
+    })
 
     return { ok: true, refundedFuel, buildingName }
   },
@@ -313,4 +336,56 @@ export const useBuildingStore = create<BuildingStore>((set, get) => ({
       lastDemolish: null,
       lastMove: null,
     }),
+
+  processZones: () => {
+    const { buildings } = get()
+    const mapStore = useMapStore.getState()
+    const progressStore = useProgressStore.getState()
+    const { tiles, gridWidth, gridHeight } = mapStore
+
+    const zonesToProcess: { building: BuildingInstance; zoneType: ZoneType }[] = []
+
+    for (const building of buildings) {
+      const buildingType = getBuildingType(building.typeId)
+      if (buildingType?.category === 'zone' && buildingType.zoneType) {
+        zonesToProcess.push({ building, zoneType: buildingType.zoneType })
+      }
+    }
+
+    if (zonesToProcess.length === 0) return
+
+    const newBuildings = [...buildings]
+
+    for (const { building, zoneType } of zonesToProcess) {
+      if (!isAdjacentToRoad(tiles, building.x, building.y, gridWidth, gridHeight)) {
+        continue
+      }
+
+      const autoBuildings = getAutoBuildingsForZone(zoneType)
+      if (autoBuildings.length === 0) continue
+
+      const randomIndex = Math.floor(Math.random() * autoBuildings.length)
+      const autoBuildingType = autoBuildings[randomIndex]
+
+      const autoInstance: BuildingInstance = {
+        id: generateBuildingId(),
+        typeId: autoBuildingType.id,
+        x: building.x,
+        y: building.y,
+        placedAt: Date.now(),
+      }
+
+      mapStore.setTileBuilding(building.x, building.y, autoInstance.id)
+
+      const idx = newBuildings.findIndex((b) => b.id === building.id)
+      if (idx !== -1) {
+        newBuildings.splice(idx, 1, autoInstance)
+      }
+    }
+
+    const newPopulation = calculatePopulation(newBuildings)
+    progressStore.setPopulation(newPopulation)
+
+    set({ buildings: newBuildings })
+  },
 }))

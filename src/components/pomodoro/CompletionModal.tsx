@@ -1,13 +1,3 @@
-/**
- * 番茄钟完成弹窗
- * 依据：development-design.md 5.1.2 页面内弹窗、6.2 番茄钟完整流程
- *
- * 显示内容：
- * - 完成祝贺
- * - 奖励（燃料 +3，XP +50）
- * - 升级提示（若有）
- * - [继续] 按钮关闭弹窗
- */
 import { useEffect, useRef } from 'react'
 import { usePomodoroStore } from '@/store/pomodoroStore'
 import { useProgressStore } from '@/store/progressStore'
@@ -23,7 +13,6 @@ export default function CompletionModal() {
   const { play } = useSound()
   const prevRewardRef = useRef(lastReward)
 
-  // 弹窗出现时播放完成音效
   useEffect(() => {
     if (lastReward && !prevRewardRef.current) {
       play('complete')
@@ -35,77 +24,65 @@ export default function CompletionModal() {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
       onClick={clearLastReward}
     >
       <div
-        className="relative w-[90%] max-w-md rounded-2xl border border-border-subtle bg-bg-deep/95 p-8 text-center shadow-2xl"
+        className="relative w-[90%] max-w-sm pixel-panel bg-gradient-to-br from-yellow-50 via-orange-50 to-green-50 p-6 text-center animate-bounce-soft"
         onClick={(e) => e.stopPropagation()}
-        style={{ boxShadow: '0 0 40px var(--glow-orange)' }}
+        style={{ animationDuration: '0.5s', animationIterationCount: '1' }}
       >
-        {/* 装饰光晕 */}
-        <div
-          className="pointer-events-none absolute inset-0 rounded-2xl opacity-30"
-          style={{
-            background: 'radial-gradient(circle at 50% 0%, var(--glow-orange), transparent 70%)',
-          }}
-        />
+        <div className="absolute -top-3 -left-3 w-6 h-6 bg-accent-yellow border-3 border-wood-dark rotate-45 flex items-center justify-center" />
+        <div className="absolute -top-3 -right-3 w-6 h-6 bg-accent-mint border-3 border-wood-dark rotate-45 flex items-center justify-center" />
 
-        <div className="relative">
-          <div className="mb-2 text-6xl">🎉</div>
-          <h2 className="font-display text-3xl text-accent-orange">专注完成！</h2>
-          <p className="mt-2 text-text-secondary">喵星又向前迈进了一步～</p>
+        <div className="mb-3 text-5xl animate-wiggle">🎉</div>
+        <h2 className="font-display text-2xl text-accent-orange">专注完成！</h2>
+        <p className="mt-1 text-sm text-text-secondary">喵星又长大了一点～</p>
 
-          {/* 奖励展示 */}
-          <div className="mt-6 flex justify-center gap-4">
-            <div className="flex flex-col items-center rounded-xl bg-bg-card px-6 py-4">
-              <span className="text-3xl">⛽</span>
-              <span className="mt-1 text-2xl font-bold text-accent-orange">+{lastReward.fuel}</span>
-              <span className="text-xs text-text-secondary">燃料</span>
-            </div>
-            <div className="flex flex-col items-center rounded-xl bg-bg-card px-6 py-4">
-              <span className="text-3xl">✨</span>
-              <span className="mt-1 text-2xl font-bold text-accent-lavender">
-                +{lastReward.xp + (lastReward.roadBonusXp ?? 0)}
-              </span>
-              <span className="text-xs text-text-secondary">经验值</span>
-            </div>
+        <div className="mt-5 flex justify-center gap-3">
+          <div className="flex flex-col items-center pixel-panel bg-orange-50 px-4 py-3">
+            <span className="text-2xl">⛽</span>
+            <span className="mt-1 text-xl font-display text-accent-orange">+{lastReward.fuel}</span>
+            <span className="text-[10px] text-text-dim">燃料</span>
           </div>
-
-          {/* 邻路加成明细（迭代2） */}
-          {lastReward.roadBonusXp && lastReward.roadBonusXp > 0 && (
-            <div className="mt-3 rounded-xl border border-accent-mint/30 bg-accent-mint/10 px-4 py-2">
-              <p className="text-sm text-accent-mint">
-                🏙️ 邻路加成：{lastReward.roadBonusBuildings} 栋沿街建筑 · XP +
-                {lastReward.roadBonusXp}
-              </p>
-            </div>
-          )}
-
-          {/* 升级提示 */}
-          {lastLevelUp && (
-            <div className="mt-4 rounded-xl border border-accent-mint/30 bg-accent-mint/10 px-4 py-3">
-              <p className="font-display text-lg text-accent-mint">
-                升级！Lv{lastLevelUp.from} → Lv{lastLevelUp.to}
-              </p>
-              <p className="mt-1 text-xs text-text-secondary">解锁了新内容，去地图看看吧～</p>
-            </div>
-          )}
-
-          {/* 当前状态 */}
-          <div className="mt-4 flex justify-center gap-6 text-sm text-text-dim">
-            <span>当前燃料：{fuel}</span>
-            <span>当前经验：{xp}</span>
-            <span>等级：Lv{level}</span>
+          <div className="flex flex-col items-center pixel-panel bg-purple-50 px-4 py-3">
+            <span className="text-2xl">✨</span>
+            <span className="mt-1 text-xl font-display text-accent-lavender">
+              +{lastReward.xp + (lastReward.roadBonusXp ?? 0)}
+            </span>
+            <span className="text-[10px] text-text-dim">经验</span>
           </div>
-
-          <button
-            onClick={clearLastReward}
-            className="mt-6 w-full rounded-xl bg-accent-orange px-6 py-3 font-medium text-white transition-colors hover:bg-accent-coral"
-          >
-            继续
-          </button>
         </div>
+
+        {lastReward.roadBonusXp && lastReward.roadBonusXp > 0 && (
+          <div className="mt-3 border-2 border-accent-mint bg-accent-mint/20 px-3 py-2">
+            <p className="text-xs font-display text-accent-mint">
+              🏙️ 邻路加成 · {lastReward.roadBonusBuildings}栋建筑 · XP +{lastReward.roadBonusXp}
+            </p>
+          </div>
+        )}
+
+        {lastLevelUp && (
+          <div className="mt-3 border-2 border-accent-yellow bg-accent-yellow/20 px-3 py-2 animate-sparkle">
+            <p className="font-display text-lg text-amber-700">
+              ⬆️ 升级！Lv{lastLevelUp.from} → Lv{lastLevelUp.to}
+            </p>
+            <p className="mt-1 text-[10px] text-text-secondary">解锁新内容，快去建造吧！</p>
+          </div>
+        )}
+
+        <div className="mt-4 flex justify-center gap-4 text-[10px] text-text-dim font-display">
+          <span>⛽{fuel}</span>
+          <span>⭐Lv{level}</span>
+          <span>✨{xp}XP</span>
+        </div>
+
+        <button
+          onClick={clearLastReward}
+          className="mt-5 w-full pixel-btn text-base"
+        >
+          太棒了！🌟
+        </button>
       </div>
     </div>
   )

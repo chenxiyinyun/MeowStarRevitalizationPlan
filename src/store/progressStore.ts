@@ -20,6 +20,8 @@ interface ProgressStore extends ProgressState {
   setProgress: (progress: ProgressState) => void
   /** 重置为初始状态 */
   reset: () => void
+  /** 更新居民数量 */
+  setPopulation: (population: number) => void
 }
 
 export const useProgressStore = create<ProgressStore>((set, get) => ({
@@ -55,4 +57,8 @@ export const useProgressStore = create<ProgressStore>((set, get) => ({
   setProgress: (progress) => set({ ...progress }),
 
   reset: () => set({ ...INITIAL_PROGRESS }),
+
+  setPopulation: (population) => {
+    set({ population: Math.max(0, population) })
+  },
 }))

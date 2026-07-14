@@ -22,6 +22,42 @@ export const BUILDING_TYPES: BuildingType[] = [
     height: 2,
   },
   {
+    id: 'residential_zone',
+    name: '住宅区规划',
+    description: '规划为住宅区域，建筑会自动生成',
+    category: 'zone',
+    zoneType: 'residential',
+    cost: { fuel: 3 },
+    unlockLevel: 1,
+    footprint: { w: 1, h: 1 },
+    color: 0x66bb6a,
+    height: 4,
+  },
+  {
+    id: 'commercial_zone',
+    name: '商业区规划',
+    description: '规划为商业区域，建筑会自动生成',
+    category: 'zone',
+    zoneType: 'commercial',
+    cost: { fuel: 4 },
+    unlockLevel: 1,
+    footprint: { w: 1, h: 1 },
+    color: 0x42a5f5,
+    height: 4,
+  },
+  {
+    id: 'industrial_zone',
+    name: '工业区规划',
+    description: '规划为工业区域，建筑会自动生成',
+    category: 'zone',
+    zoneType: 'industrial',
+    cost: { fuel: 4 },
+    unlockLevel: 1,
+    footprint: { w: 1, h: 1 },
+    color: 0xff7043,
+    height: 4,
+  },
+  {
     id: 'tree_small',
     name: '小树',
     description: '为荒野增添一抹绿意',
@@ -55,6 +91,7 @@ export const BUILDING_TYPES: BuildingType[] = [
     footprint: { w: 1, h: 1 },
     color: 0xa1887f,
     height: 24,
+    capacity: 2,
   },
   {
     id: 'cat_house',
@@ -66,6 +103,7 @@ export const BUILDING_TYPES: BuildingType[] = [
     footprint: { w: 1, h: 1 },
     color: 0xffab91,
     height: 18,
+    capacity: 1,
   },
   {
     id: 'lamp_old',
@@ -112,6 +150,7 @@ export const BUILDING_TYPES: BuildingType[] = [
     footprint: { w: 1, h: 1 },
     color: 0xbcaaa4,
     height: 32,
+    capacity: 4,
   },
   {
     id: 'convenience_store',
@@ -169,6 +208,7 @@ export const BUILDING_TYPES: BuildingType[] = [
     footprint: { w: 1, h: 1 },
     color: 0x78909c,
     height: 48,
+    capacity: 8,
   },
   {
     id: 'office_building',
@@ -260,6 +300,76 @@ export const BUILDING_TYPES: BuildingType[] = [
     color: 0xe91e63,
     height: 30,
   },
+
+  // ─── 自动生成建筑（规划区域触发）───
+  {
+    id: 'auto_residence_1',
+    name: '居民小屋',
+    description: '住宅区自动生成的小型住宅',
+    category: 'residence',
+    cost: { fuel: 0 },
+    unlockLevel: 1,
+    footprint: { w: 1, h: 1 },
+    color: 0x8d6e63,
+    height: 20,
+    capacity: 2,
+  },
+  {
+    id: 'auto_residence_2',
+    name: '民居',
+    description: '住宅区自动生成的中型住宅',
+    category: 'residence',
+    cost: { fuel: 0 },
+    unlockLevel: 1,
+    footprint: { w: 1, h: 1 },
+    color: 0x9e9e9e,
+    height: 30,
+    capacity: 4,
+  },
+  {
+    id: 'auto_commercial_1',
+    name: '小商店',
+    description: '商业区自动生成的小型商铺',
+    category: 'commercial',
+    cost: { fuel: 0 },
+    unlockLevel: 1,
+    footprint: { w: 1, h: 1 },
+    color: 0xffb74d,
+    height: 24,
+  },
+  {
+    id: 'auto_commercial_2',
+    name: '商店',
+    description: '商业区自动生成的中型商铺',
+    category: 'commercial',
+    cost: { fuel: 0 },
+    unlockLevel: 1,
+    footprint: { w: 1, h: 1 },
+    color: 0xff9800,
+    height: 32,
+  },
+  {
+    id: 'auto_industrial_1',
+    name: '小工厂',
+    description: '工业区自动生成的小型工厂',
+    category: 'commercial',
+    cost: { fuel: 0 },
+    unlockLevel: 1,
+    footprint: { w: 1, h: 1 },
+    color: 0x795548,
+    height: 28,
+  },
+  {
+    id: 'auto_industrial_2',
+    name: '厂房',
+    description: '工业区自动生成的中型厂房',
+    category: 'commercial',
+    cost: { fuel: 0 },
+    unlockLevel: 1,
+    footprint: { w: 1, h: 1 },
+    color: 0x616161,
+    height: 36,
+  },
 ]
 
 /** 建筑 ID → 配置 的映射 */
@@ -270,4 +380,16 @@ export const BUILDING_TYPE_MAP: Record<string, BuildingType> = Object.fromEntrie
 /** 获取建筑配置 */
 export function getBuildingType(id: string): BuildingType | undefined {
   return BUILDING_TYPE_MAP[id]
+}
+
+/** 获取规划区域可自动生成的建筑类型 */
+export function getAutoBuildingsForZone(zoneType: string): BuildingType[] {
+  const prefixMap: Record<string, string> = {
+    residential: 'auto_residence',
+    commercial: 'auto_commercial',
+    industrial: 'auto_industrial',
+  }
+  const prefix = prefixMap[zoneType]
+  if (!prefix) return []
+  return BUILDING_TYPES.filter((b) => b.id.startsWith(prefix))
 }

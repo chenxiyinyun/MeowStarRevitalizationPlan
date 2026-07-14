@@ -17,6 +17,7 @@ import {
   minutesToMs,
   POMODORO_DURATION_MIN,
   POMODORO_DURATION_MAX,
+  calculateReward,
 } from '@/types'
 import { countAdjacentRoadBuildings } from '@/game/data/roads'
 import { useProgressStore } from './progressStore'
@@ -165,7 +166,8 @@ export const usePomodoroStore = create<PomodoroStore>((set, get) => ({
     if (remaining > 0) return false
 
     // 倒计时归零，完成会话
-    const baseReward = POMODORO_CONFIG.REWARD
+    const focusMinutes = current.durationMs / 1000 / 60
+    const baseReward = calculateReward(focusMinutes)
     // 邻路加成：每个邻路建筑额外产出 XP
     const roadBonus = computeRoadBonus()
     const reward: PomodoroReward = {
@@ -180,7 +182,7 @@ export const usePomodoroStore = create<PomodoroStore>((set, get) => ({
     const progressStore = useProgressStore.getState()
     progressStore.addFuel(reward.fuel)
     const xpResult = progressStore.addXp(reward.xp + roadBonus.bonusXp)
-    progressStore.recordPomodoroCompleted(current.durationMs / 1000 / 60)
+    progressStore.recordPomodoroCompleted(focusMinutes)
 
     set((state) => ({
       phase: 'completed',
@@ -203,7 +205,8 @@ export const usePomodoroStore = create<PomodoroStore>((set, get) => ({
       const remaining = getRemainingMs(current)
       if (remaining <= 0) {
         // 后台已到时，直接完成
-        const baseReward = POMODORO_CONFIG.REWARD
+        const focusMinutes = current.durationMs / 1000 / 60
+        const baseReward = calculateReward(focusMinutes)
         const roadBonus = computeRoadBonus()
         const reward: PomodoroReward = {
           fuel: baseReward.fuel,
@@ -215,7 +218,7 @@ export const usePomodoroStore = create<PomodoroStore>((set, get) => ({
         const progressStore = useProgressStore.getState()
         progressStore.addFuel(reward.fuel)
         const xpResult = progressStore.addXp(reward.xp + roadBonus.bonusXp)
-        progressStore.recordPomodoroCompleted(current.durationMs / 1000 / 60)
+        progressStore.recordPomodoroCompleted(focusMinutes)
         set({
           phase: 'completed',
           current: completed,

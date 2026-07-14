@@ -1,26 +1,41 @@
 :root {
-  /* 背景与表面 */
-  --bg-deep: #0a0e1a;
-  --bg-card: rgba(255, 255, 255, 0.04);
-  --bg-card-hover: rgba(255, 255, 255, 0.08);
+  --bg-warm: #fef9e7;
+  --bg-cream: #fdf6e3;
+  --bg-paper: #faf3e0;
+  --bg-card: #fffdf7;
+  --bg-card-hover: #fff9ec;
+  --bg-sky: #87ceeb;
+  --bg-grass: #7cb342;
 
-  /* 主色 */
-  --accent-orange: #ff6b35;
-  --accent-coral: #ff8c69;
-  --accent-cream: #fff5e6;
-  --accent-lavender: #c4b5fd;
-  --accent-mint: #6ee7b7;
-  --accent-pink: #f9a8d4;
+  --brown-dark: #5d4037;
+  --brown-medium: #8d6e63;
+  --brown-light: #bcaaa4;
 
-  /* 文字 */
-  --text-primary: #f8f9fa;
-  --text-secondary: rgba(248, 249, 250, 0.65);
-  --text-dim: rgba(248, 249, 250, 0.35);
+  --wood-dark: #6d4c41;
+  --wood-medium: #8d6e63;
+  --wood-light: #d7ccc8;
 
-  /* 光晕 */
-  --glow-orange: rgba(255, 107, 53, 0.3);
-  --glow-lavender: rgba(196, 181, 253, 0.25);
+  --accent-orange: #ff7043;
+  --accent-coral: #ff8a65;
+  --accent-peach: #ffcc80;
+  --accent-cream: #fff8e1;
+  --accent-lavender: #ba68c8;
+  --accent-mint: #66bb6a;
+  --accent-sky: #42a5f5;
+  --accent-pink: #f48fb1;
+  --accent-yellow: #ffca28;
 
-  /* 边框 */
-  --border-subtle: rgba(255, 255, 255, 0.06);
+  --text-primary: #4e342e;
+  --text-secondary: #6d4c41;
+  --text-dim: #a1887f;
+  --text-light: #fffdf7;
+
+  --border-wood: #8d6e63;
+  --border-light: #d7ccc8;
+  --border-subtle: #efebe9;
+
+  --shadow-soft: 0 4px 12px rgba(93, 64, 55, 0.1);
+  --shadow-card: 0 2px 8px rgba(93, 64, 55, 0.08);
+  --shadow-button: 0 3px 0 var(--wood-dark);
+  --shadow-button-pressed: 0 1px 0 var(--wood-dark);
 }

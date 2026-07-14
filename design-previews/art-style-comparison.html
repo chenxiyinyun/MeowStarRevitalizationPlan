@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>喵星复兴计划 · 美术风格对比</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg-deep: #0a0e1a;
+    --bg-card: rgba(255, 255, 255, 0.04);
+    --bg-card-hover: rgba(255, 255, 255, 0.08);
+    --accent-orange: #ff6b35;
+    --accent-lavender: #c4b5fd;
+    --accent-mint: #6ee7b7;
+    --accent-pink: #f9a8d4;
+    --text-primary: #f8f9fa;
+    --text-secondary: rgba(248, 249, 250, 0.65);
+    --text-dim: rgba(248, 249, 250, 0.35);
+    --border-subtle: rgba(255, 255, 255, 0.06);
+  }
+
+  body {
+    font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 48px 24px;
+  }
+
+  /* 背景光晕 */
+  .bg-glow {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+  .bg-glow .glow-1 {
+    position: absolute;
+    left: 10%;
+    top: -10%;
+    width: 500px;
+    height: 500px;
+    border-radius: 50%;
+    background: rgba(255, 107, 53, 0.15);
+    filter: blur(120px);
+  }
+  .bg-glow .glow-2 {
+    position: absolute;
+    right: 10%;
+    bottom: -10%;
+    width: 400px;
+    height: 400px;
+    border-radius: 50%;
+    background: rgba(196, 181, 253, 0.15);
+    filter: blur(100px);
+  }
+
+  header {
+    position: relative;
+    z-index: 10;
+    text-align: center;
+    margin-bottom: 64px;
+  }
+  header h1 {
+    font-size: 48px;
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--accent-orange), var(--accent-lavender));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 16px;
+  }
+  header p {
+    font-size: 18px;
+    color: var(--text-secondary);
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  .section-title {
+    position: relative;
+    z-index: 10;
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 32px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .section-title::before {
+    content: '';
+    width: 4px;
+    height: 28px;
+    background: linear-gradient(180deg, var(--accent-orange), var(--accent-lavender));
+    border-radius: 2px;
+  }
+
+  /* 风格卡片网格 */
+  .style-grid {
+    position: relative;
+    z-index: 10;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    margin-bottom: 80px;
+  }
+
+  .style-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 20px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+  }
+  .style-card:hover {
+    border-color: rgba(255, 107, 53, 0.3);
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  }
+  .style-card.current {
+    border-color: var(--accent-mint);
+  }
+  .style-card.recommended {
+    border-color: var(--accent-orange);
+  }
+
+  .style-preview {
+    width: 100%;
+    height: 280px;
+    background: #0f1524;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .style-preview svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  .style-badge {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    z-index: 5;
+  }
+  .badge-current {
+    background: rgba(110, 231, 183, 0.15);
+    color: var(--accent-mint);
+    border: 1px solid rgba(110, 231, 183, 0.3);
+  }
+  .badge-recommended {
+    background: rgba(255, 107, 53, 0.15);
+    color: var(--accent-orange);
+    border: 1px solid rgba(255, 107, 53, 0.3);
+  }
+
+  .style-info {
+    padding: 24px;
+  }
+  .style-info h3 {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .style-info .tech-tag {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: rgba(196, 181, 253, 0.15);
+    color: var(--accent-lavender);
+    font-weight: 500;
+  }
+  .style-info > p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: 16px;
+  }
+
+  .style-pros-cons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .pros, .cons {
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .pros strong { color: var(--accent-mint); display: block; margin-bottom: 4px; }
+  .cons strong { color: #f87171; display: block; margin-bottom: 4px; }
+  .pros ul, .cons ul { list-style: none; padding-left: 0; }
+  .pros li::before { content: '✓ '; color: var(--accent-mint); }
+  .cons li::before { content: '✗ '; color: #f87171; }
+
+  .style-complexity {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-dim);
+    padding-top: 12px;
+    border-top: 1px solid var(--border-subtle);
+  }
+  .complexity-bar {
+    flex: 1;
+    height: 4px;
+    background: var(--border-subtle);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .complexity-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--accent-mint), var(--accent-orange));
+  }
+
+  /* 技术栈对比表 */
+  .tech-compare {
+    position: relative;
+    z-index: 10;
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 20px;
+    overflow: hidden;
+    margin-bottom: 80px;
+  }
+  .tech-compare table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  .tech-compare th {
+    background: rgba(255, 255, 255, 0.02);
+    padding: 16px 20px;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border-subtle);
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+  .tech-compare td {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+  }
+  .tech-compare tr:last-child td { border-bottom: none; }
+  .tech-compare td:first-child {
+    color: var(--text-primary);
+    font-weight: 500;
+    width: 160px;
+  }
+  .tech-compare .check { color: var(--accent-mint); }
+  .tech-compare .cross { color: #f87171; }
+  .tech-compare .partial { color: #fbbf24; }
+
+  /* 底部总结 */
+  .summary {
+    position: relative;
+    z-index: 10;
+    background: linear-gradient(135deg, rgba(255, 107, 53, 0.1), rgba(196, 181, 253, 0.1));
+    border: 1px solid rgba(255, 107, 53, 0.2);
+    border-radius: 20px;
+    padding: 40px;
+    text-align: center;
+  }
+  .summary h3 {
+    font-size: 24px;
+    margin-bottom: 12px;
+  }
+  .summary p {
+    color: var(--text-secondary);
+    line-height: 1.7;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+  .summary .recommendation {
+    margin-top: 24px;
+    padding: 16px 24px;
+    background: rgba(255, 107, 53, 0.15);
+    border: 1px solid rgba(255, 107, 53, 0.3);
+    border-radius: 12px;
+    display: inline-block;
+  }
+  .summary .recommendation strong {
+    color: var(--accent-orange);
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+<div class="bg-glow">
+  <div class="glow-1"></div>
+  <div class="glow-2"></div>
+</div>
+
+<div class="container">
+  <header>
+    <h1>喵星复兴计划 · 美术风格探索</h1>
+    <p>从当前极简 low-poly 出发，探索 4 种更具表现力的美术风格方向，以及对应的技术栈选型</p>
+  </header>
+
+  <!-- 风格对比 -->
+  <h2 class="section-title">五种风格方向对比</h2>
+  <div class="style-grid">
+
+    <!-- 方案0：当前风格 -->
+    <div class="style-card current">
+      <div class="style-preview">
+        <span class="style-badge badge-current">当前方案</span>
+        <svg viewBox="0 0 400 280" xmlns="http://www.w3.org/2000/svg">
+          <!-- 背景 -->
+          <rect width="400" height="280" fill="#0f1524"/>
+          <!-- 地形瓦片：等距菱形 -->
+          <g transform="translate(200, 140)">
+            <!-- 草地瓦片 -->
+            <polygon points="0,-40 30,-25 0,-10 -30,-25" fill="#4a9d5e" stroke="#2d5a38" stroke-width="1" opacity="0.8"/>
+            <polygon points="30,-25 60,-10 30,5 0,-10" fill="#4a9d5e" stroke="#2d5a38" stroke-width="1" opacity="0.7"/>
+            <polygon points="0,-10 30,5 0,20 -30,5" fill="#4a9d5e" stroke="#2d5a38" stroke-width="1" opacity="0.75"/>
+            <polygon points="-30,-25 0,-10 -30,5 -60,-10" fill="#4a9d5e" stroke="#2d5a38" stroke-width="1" opacity="0.7"/>
+            <!-- 树：三角锥+棕色干 -->
+            <g transform="translate(-20, -30)">
+              <rect x="-3" y="0" width="6" height="8" fill="#6d4c41"/>
+              <polygon points="0,-20 12,0 -12,0" fill="#2e7d32"/>
+            </g>
+            <!-- 木屋：盒子+三角屋顶 -->
+            <g transform="translate(20, 0)">
+              <polygon points="0,-24 16,-16 0,-8 -16,-16" fill="#a1887f"/>
+              <polygon points="16,-16 16,-4 0,4 0,-16" fill="#795548"/>
+              <polygon points="-16,-16 -16,-4 0,4 0,-16" fill="#8d6e63"/>
+              <polygon points="0,-36 16,-24 -16,-24" fill="#5d4037"/>
+              <rect x="2" y="-18" width="5" height="5" fill="#fff9c4" opacity="0.8"/>
+            </g>
+          </g>
+          <!-- 简易猫咪：圆+耳 -->
+          <g transform="translate(120, 180)">
+            <ellipse cx="0" cy="0" rx="12" ry="10" fill="#ff8a65"/>
+            <polygon points="-8,-6 -5,-16 -2,-6" fill="#ff8a65"/>
+            <polygon points="8,-6 5,-16 2,-6" fill="#ff8a65"/>
+            <circle cx="-4" cy="-2" r="2" fill="#1a1a2e"/>
+            <circle cx="4" cy="-2" r="2" fill="#1a1a2e"/>
+          </g>
+        </svg>
+      </div>
+      <div class="style-info">
+        <h3>极简 Low-Poly <span class="tech-tag">PixiJS Graphics</span></h3>
+        <p>纯色几何块面 + 描边，无纹理细节。当前实现方案，风格高度统一但表现力有限。</p>
+        <div class="style-pros-cons">
+          <div class="pros">
+            <strong>优点</strong>
+            <ul>
+              <li>代码量少，维护简单</li>
+              <li>零素材依赖，体积小</li>
+              <li>风格 100% 统一</li>
+            </ul>
+          </div>
+          <div class="cons">
+            <strong>缺点</strong>
+            <ul>
+              <li>过于简陋，缺乏细节</li>
+              <li>视觉层次单薄</li>
+              <li>辨识度不高</li>
+            </ul>
+          </div>
+        </div>
+        <div class="style-complexity">
+          <span>实现难度</span>
+          <div class="complexity-bar"><div class="complexity-fill" style="width: 15%"></div></div>
+          <span>低</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 方案1：精致像素风 -->
+    <div class="style-card">
+      <div class="style-preview">
+        <svg viewBox="0 0 400 280" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+          <rect width="400" height="280" fill="#1a1c2e"/>
+          <!-- 像素风草地 -->
+          <g transform="translate(200, 140)">
+            <!-- 草地瓦片 像素化 -->
+            <polygon points="0,-40 30,-25 0,-10 -30,-25" fill="#3d7a4f"/>
+            <polygon points="30,-25 60,-10 30,5 0,-10" fill="#4a8c5a"/>
+            <polygon points="0,-10 30,5 0,20 -30,5" fill="#3d7a4f"/>
+            <polygon points="-30,-25 0,-10 -30,5 -60,-10" fill="#4a8c5a"/>
+            <!-- 像素点缀 -->
+            <rect x="-5" y="-28" width="2" height="2" fill="#66bb6a"/>
+            <rect x="8" y="-22" width="2" height="2" fill="#81c784"/>
+            <rect x="-15" y="-18" width="2" height="2" fill="#66bb6a"/>
+            <rect x="-2" y="-8" width="2" height="2" fill="#81c784"/>
+            <rect x="12" y="-5" width="2" height="2" fill="#66bb6a"/>
+            <!-- 像素树 -->
+            <g transform="translate(-22, -35)">
+              <rect x="-2" y="0" width="4" height="10" fill="#5d4037"/>
+              <rect x="-6" y="-8" width="12" height="8" fill="#2e7d32"/>
+              <rect x="-4" y="-14" width="8" height="6" fill="#388e3c"/>
+              <rect x="-2" y="-18" width="4" height="4" fill="#43a047"/>
+              <rect x="-4" y="-6" width="2" height="2" fill="#66bb6a"/>
+              <rect x="2" y="-10" width="2" height="2" fill="#66bb6a"/>
+            </g>
+            <!-- 像素房子 -->
+            <g transform="translate(18, -5)">
+              <!-- 屋顶 -->
+              <polygon points="0,-30 18,-18 -18,-18" fill="#c62828"/>
+              <rect x="-16" y="-20" width="32" height="4" fill="#b71c1c"/>
+              <!-- 墙体 -->
+              <rect x="-14" y="-16" width="28" height="20" fill="#d7ccc8"/>
+              <rect x="-14" y="-16" width="28" height="2" fill="#bcaaa4"/>
+              <!-- 窗户 -->
+              <rect x="-10" y="-12" width="6" height="6" fill="#4fc3f7"/>
+              <rect x="-10" y="-12" width="6" height="2" fill="#81d4fa"/>
+              <rect x="-8" y="-10" width="2" height="4" fill="#29b6f6"/>
+              <rect x="4" y="-12" width="6" height="6" fill="#4fc3f7"/>
+              <rect x="4" y="-12" width="6" height="2" fill="#81d4fa"/>
+              <rect x="6" y="-10" width="2" height="4" fill="#29b6f6"/>
+              <!-- 门 -->
+              <rect x="-3" y="-6" width="6" height="10" fill="#6d4c41"/>
+              <rect x="-2" y="-3" width="1" height="2" fill="#ffd54f"/>
+            </g>
+          </g>
+          <!-- 像素猫 -->
+          <g transform="translate(120, 185)" shape-rendering="crispEdges">
+            <rect x="-10" y="-4" width="20" height="10" fill="#ff8a65"/>
+            <rect x="-8" y="-8" width="16" height="4" fill="#ff8a65"/>
+            <rect x="-8" y="-14" width="4" height="6" fill="#ff8a65"/>
+            <rect x="4" y="-14" width="4" height="6" fill="#ff8a65"/>
+            <rect x="-6" y="-12" width="2" height="3" fill="#ffccbc"/>
+            <rect x="4" y="-12" width="2" height="3" fill="#ffccbc"/>
+            <rect x="-5" y="-6" width="2" height="2" fill="#1a1a2e"/>
+            <rect x="3" y="-6" width="2" height="2" fill="#1a1a2e"/>
+            <rect x="-1" y="-3" width="2" height="1" fill="#f48fb1"/>
+            <rect x="-2" y="-1" width="4" height="1" fill="#1a1a2e"/>
+          </g>
+        </svg>
+      </div>
+      <div class="style-info">
+        <h3>精致像素风 <span class="tech-tag">Pixel Art + 纹理图集</span></h3>
+        <p>16-bit 风格等距像素艺术，清晰的像素轮廓 + 丰富的色彩层次，复古又精致。</p>
+        <div class="style-pros-cons">
+          <div class="pros">
+            <strong>优点</strong>
+            <ul>
+              <li>辨识度高，风格独特</li>
+              <li>细节丰富，层次分明</li>
+              <li>性能优秀（Sprite 图集）</li>
+            </ul>
+          </div>
+          <div class="cons">
+            <strong>缺点</strong>
+            <ul>
+              <li>需要美术绘制 26+ 建筑</li>
+              <li>缩放时可能模糊</li>
+              <li>工作量较大</li>
+            </ul>
+          </div>
+        </div>
+        <div class="style-complexity">
+          <span>实现难度</span>
+          <div class="complexity-bar"><div class="complexity-fill" style="width: 65%"></div></div>
+          <span>中高</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 方案2：手绘插画风 -->
+    <div class="style-card">
+      <div class="style-preview">
+        <svg viewBox="0 0 400 280" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="skyGrad" cx="50%" cy="30%">
+              <stop offset="0%" stop-color="#2d3561"/>
+              <stop offset="100%" stop-color="#1a1c2e"/>
+            </radialGradient>
+          </defs>
+          <rect width="400" height="280" fill="url(#skyGrad)"/>
+          <!-- 星星点缀 -->
+          <circle cx="50" cy="40" r="1" fill="white" opacity="0.6"/>
+          <circle cx="120" cy="60" r="1.5" fill="white" opacity="0.4"/>
+          <circle cx="350" cy="30" r="1" fill="white" opacity="0.5"/>
+          <circle cx="300" cy="70" r="1.2" fill="white" opacity="0.3"/>
+
+          <g transform="translate(200, 145)">
+            <!-- 手绘风草地 柔和边缘 -->
+            <ellipse cx="0" cy="-25" rx="55" ry="35" fill="#5a9e6f" opacity="0.9"/>
+            <ellipse cx="-10" cy="-20" rx="45" ry="28" fill="#68ab7d" opacity="0.7"/>
+            <!-- 草丛线条 -->
+            <path d="M-30,-10 Q-28,-18 -26,-10" stroke="#3d7a4f" stroke-width="1.5" fill="none" opacity="0.5"/>
+            <path d="M-15,-5 Q-13,-12 -11,-5" stroke="#3d7a4f" stroke-width="1.5" fill="none" opacity="0.5"/>
+            <path d="M10,-8 Q12,-15 14,-8" stroke="#3d7a4f" stroke-width="1.5" fill="none" opacity="0.5"/>
+            <path d="M25,-12 Q27,-20 29,-12" stroke="#3d7a4f" stroke-width="1.5" fill="none" opacity="0.5"/>
+
+            <!-- 手绘树 圆润 -->
+            <g transform="translate(-25, -40)">
+              <rect x="-2.5" y="0" width="5" height="14" rx="2" fill="#8d6e63"/>
+              <ellipse cx="0" cy="-8" rx="14" ry="12" fill="#4caf50"/>
+              <ellipse cx="-5" cy="-12" rx="8" ry="7" fill="#66bb6a" opacity="0.8"/>
+              <ellipse cx="5" cy="-6" rx="6" ry="5" fill="#81c784" opacity="0.6"/>
+            </g>
+
+            <!-- 手绘小屋 温馨 -->
+            <g transform="translate(20, -10)">
+              <!-- 屋顶 圆润三角 -->
+              <path d="M-18,-22 Q0,-38 18,-22 L14,-18 L-14,-18 Z" fill="#e57373"/>
+              <path d="M-16,-20 Q0,-34 16,-20" stroke="#c62828" stroke-width="1.5" fill="none"/>
+              <!-- 烟囱 -->
+              <rect x="6" y="-30" width="5" height="10" rx="1" fill="#795548"/>
+              <!-- 墙体 -->
+              <rect x="-15" y="-18" width="30" height="24" rx="3" fill="#fff3e0"/>
+              <rect x="-15" y="-18" width="30" height="3" rx="2" fill="#ffe0b2"/>
+              <!-- 窗户 圆拱 -->
+              <rect x="-10" y="-12" width="7" height="9" rx="3" fill="#81d4fa"/>
+              <line x1="-6.5" y1="-12" x2="-6.5" y2="-3" stroke="#4fc3f7" stroke-width="1"/>
+              <line x1="-10" y1="-7.5" x2="-3" y2="-7.5" stroke="#4fc3f7" stroke-width="1"/>
+              <!-- 门 拱形 -->
+              <path d="M-3,6 L-3,-2 Q0,-6 3,-2 L3,6 Z" fill="#a1887f"/>
+              <circle cx="1.5" cy="2" r="1" fill="#ffd54f"/>
+            </g>
+          </g>
+
+          <!-- 手绘猫咪 圆润可爱 -->
+          <g transform="translate(115, 185)">
+            <!-- 身体 -->
+            <ellipse cx="0" cy="2" rx="14" ry="11" fill="#ffab91"/>
+            <!-- 头 -->
+            <circle cx="0" cy="-8" r="10" fill="#ffab91"/>
+            <!-- 耳朵 圆润三角 -->
+            <path d="M-8,-14 Q-10,-22 -4,-18" fill="#ffab91" stroke="none"/>
+            <path d="M8,-14 Q10,-22 4,-18" fill="#ffab91" stroke="none"/>
+            <!-- 内耳 -->
+            <path d="M-7,-15 Q-8,-20 -5,-17" fill="#ffccbc"/>
+            <path d="M7,-15 Q8,-20 5,-17" fill="#ffccbc"/>
+            <!-- 眼睛 大大圆圆的 -->
+            <circle cx="-4" cy="-8" r="2.5" fill="white"/>
+            <circle cx="4" cy="-8" r="2.5" fill="white"/>
+            <circle cx="-3.5" cy="-7.5" r="1.5" fill="#1a1a2e"/>
+            <circle cx="4.5" cy="-7.5" r="1.5" fill="#1a1a2e"/>
+            <circle cx="-3" cy="-8" r="0.5" fill="white"/>
+            <circle cx="5" cy="-8" r="0.5" fill="white"/>
+            <!-- 鼻子嘴 -->
+            <ellipse cx="0" cy="-4" rx="1.5" ry="1" fill="#f48fb1"/>
+            <path d="M0,-3 Q-2,-1 -3,-2" stroke="#1a1a2e" stroke-width="1" fill="none"/>
+            <path d="M0,-3 Q2,-1 3,-2" stroke="#1a1a2e" stroke-width="1" fill="none"/>
+            <!-- 腮红 -->
+            <ellipse cx="-8" cy="-4" rx="2.5" ry="1.5" fill="#ffab91" opacity="0.5"/>
+            <ellipse cx="8" cy="-4" rx="2.5" ry="1.5" fill="#ffab91" opacity="0.5"/>
+            <!-- 尾巴 翘起 -->
+            <path d="M12,2 Q20,-2 18,-10" stroke="#ffab91" stroke-width="4" fill="none" stroke-linecap="round"/>
+          </g>
+        </svg>
+      </div>
+      <div class="style-info">
+        <h3>手绘插画风 <span class="tech-tag">SVG / PNG 插画</span></h3>
+        <p>圆润线条、柔和渐变、温馨治愈的插画风格，与产品"猫咪陪伴"调性高度契合。</p>
+        <div class="style-pros-cons">
+          <div class="pros">
+            <strong>优点</strong>
+            <ul>
+              <li>治愈感强，符合调性</li>
+              <li>视觉表现力丰富</li>
+              <li>辨识度高，差异化强</li>
+            </ul>
+          </div>
+          <div class="cons">
+            <strong>缺点</strong>
+            <ul>
+              <li>需要专业插画师</li>
+              <li>素材量大，周期长</li>
+              <li>等距角度难统一</li>
+            </ul>
+          </div>
+        </div>
+        <div class="style-complexity">
+          <span>实现难度</span>
+          <div class="complexity-bar"><div class="complexity-fill" style="width: 80%"></div></div>
+          <span>高</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 方案3：3D 低多边形（Three.js）-->
+    <div class="style-card recommended">
+      <div class="style-preview">
+        <svg viewBox="0 0 400 280" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="sky3d" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#1e3a5f"/>
+              <stop offset="100%" stop-color="#0f1524"/>
+            </linearGradient>
+          </defs>
+          <rect width="400" height="280" fill="url(#sky3d)"/>
+          <!-- 远山剪影 -->
+          <polygon points="0,200 80,140 160,180 240,120 320,170 400,150 400,280 0,280" fill="#1a2744" opacity="0.5"/>
+          <polygon points="0,220 100,170 200,200 300,160 400,190 400,280 0,280" fill="#15203a" opacity="0.6"/>
+
+          <g transform="translate(200, 150)">
+            <!-- 地面 渐变 -->
+            <polygon points="0,-45 45,-22 0,1 -45,-22" fill="#4a7c59"/>
+            <polygon points="45,-22 90,1 45,24 0,1" fill="#3d6b4a"/>
+            <polygon points="0,1 45,24 0,47 -45,24" fill="#355e40"/>
+            <polygon points="-45,-22 0,1 -45,24 -90,1" fill="#3d6b4a"/>
+            <!-- 地面高光 -->
+            <polygon points="0,-45 45,-22 0,1 -45,-22" fill="url(#groundHigh)" opacity="0.3"/>
+            <defs>
+              <linearGradient id="groundHigh" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#81c784"/>
+                <stop offset="100%" stop-color="transparent"/>
+              </linearGradient>
+            </defs>
+
+            <!-- 3D 树 -->
+            <g transform="translate(-25, -45)">
+              <!-- 树干 -->
+              <polygon points="-2,0 2,0 3,12 -3,12" fill="#5d4037"/>
+              <polygon points="-2,0 2,0 2.5,-2 -2.5,-2" fill="#795548"/>
+              <!-- 树冠 多层 -->
+              <polygon points="0,-25 10,-10 -10,-10" fill="#2e7d32"/>
+              <polygon points="0,-18 12,-5 -12,-5" fill="#388e3c"/>
+              <polygon points="0,-10 14,2 -14,2" fill="#43a047"/>
+              <!-- 高光 -->
+              <polygon points="0,-25 4,-15 -2,-15" fill="#66bb6a" opacity="0.6"/>
+            </g>
+
+            <!-- 3D 小屋 -->
+            <g transform="translate(20, -15)">
+              <!-- 墙体 三面 -->
+              <polygon points="-14,-16 0,-22 0,6 -14,0" fill="#a1887f"/>
+              <polygon points="0,-22 14,-16 14,0 0,6" fill="#8d6e63"/>
+              <polygon points="-14,-16 0,-22 14,-16 0,-10" fill="#bcaaa4"/>
+              <!-- 屋顶 三面 -->
+              <polygon points="-14,-16 0,-32 0,-22" fill="#c62828"/>
+              <polygon points="0,-32 14,-16 0,-22" fill="#b71c1c"/>
+              <polygon points="-14,-16 0,-32 14,-16 0,-22" fill="#d32f2f"/>
+              <!-- 窗户 左墙 -->
+              <rect x="-11" y="-13" width="5" height="6" fill="#4fc3f7"/>
+              <rect x="-11" y="-13" width="5" height="2" fill="#81d4fa"/>
+              <!-- 窗户 右墙 -->
+              <rect x="5" y="-13" width="5" height="6" fill="#29b6f6"/>
+              <rect x="5" y="-13" width="5" height="2" fill="#4fc3f7"/>
+              <!-- 门 -->
+              <polygon points="-3,6 0,3 0,6 -3,9" fill="#5d4037"/>
+            </g>
+          </g>
+
+          <!-- 3D 猫咪 -->
+          <g transform="translate(115, 190)">
+            <!-- 身体 椭圆体感 -->
+            <ellipse cx="0" cy="2" rx="13" ry="10" fill="#ff8a65"/>
+            <ellipse cx="-2" cy="0" rx="11" ry="8" fill="#ffab91" opacity="0.5"/>
+            <!-- 头 -->
+            <ellipse cx="0" cy="-9" rx="10" ry="9" fill="#ff8a65"/>
+            <ellipse cx="-2" cy="-11" rx="8" ry="6" fill="#ffab91" opacity="0.4"/>
+            <!-- 耳朵 -->
+            <polygon points="-8,-14 -5,-22 -2,-14" fill="#ff8a65"/>
+            <polygon points="8,-14 5,-22 2,-14" fill="#ff8a65"/>
+            <polygon points="-6.5,-15 -5,-20 -3.5,-15" fill="#ffccbc"/>
+            <polygon points="6.5,-15 5,-20 3.5,-15" fill="#ffccbc"/>
+            <!-- 眼睛 -->
+            <ellipse cx="-4" cy="-9" rx="2" ry="2.5" fill="#1a1a2e"/>
+            <ellipse cx="4" cy="-9" rx="2" ry="2.5" fill="#1a1a2e"/>
+            <circle cx="-3.5" cy="-10" r="0.8" fill="white"/>
+            <circle cx="4.5" cy="-10" r="0.8" fill="white"/>
+            <!-- 鼻子 -->
+            <ellipse cx="0" cy="-5" rx="1.2" ry="0.8" fill="#f48fb1"/>
+            <!-- 胡须 -->
+            <line x1="-6" y1="-4" x2="-12" y2="-5" stroke="#ffccbc" stroke-width="0.8"/>
+            <line x1="-6" y1="-3" x2="-12" y2="-2" stroke="#ffccbc" stroke-width="0.8"/>
+            <line x1="6" y1="-4" x2="12" y2="-5" stroke="#ffccbc" stroke-width="0.8"/>
+            <line x1="6" y1="-3" x2="12" y2="-2" stroke="#ffccbc" stroke-width="0.8"/>
+          </g>
+        </svg>
+      </div>
+      <div class="style-info">
+        <h3>3D 低多边形 <span class="tech-tag">Three.js</span></h3>
+        <p>真正的 3D 几何体渲染，可旋转视角、动态光影、粒子特效。视觉冲击力强，技术感足。</p>
+        <div class="style-pros-cons">
+          <div class="pros">
+            <strong>优点</strong>
+            <ul>
+              <li>真正的 3D 立体感</li>
+              <li>可自由旋转视角</li>
+              <li>动态光影 / 粒子效果</li>
+            </ul>
+          </div>
+          <div class="cons">
+            <strong>缺点</strong>
+            <ul>
+              <li>技术复杂度最高</li>
+              <li>移动端性能压力</li>
+              <li>开发周期长</li>
+            </ul>
+          </div>
+        </div>
+        <div class="style-complexity">
+          <span>实现难度</span>
+          <div class="complexity-bar"><div class="complexity-fill" style="width: 95%"></div></div>
+          <span>极高</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 方案4：矢量渐变风（推荐折中方案）-->
+    <div class="style-card recommended">
+      <div class="style-preview">
+        <svg viewBox="0 0 400 280" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="skyVec" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#2c1f5c"/>
+              <stop offset="50%" stop-color="#1a1a3e"/>
+              <stop offset="100%" stop-color="#0f1524"/>
+            </linearGradient>
+            <radialGradient id="moonGlow" cx="50%" cy="50%">
+              <stop offset="0%" stop-color="#fff9c4" stop-opacity="0.3"/>
+              <stop offset="100%" stop-color="#fff9c4" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <rect width="400" height="280" fill="url(#skyVec)"/>
+
+          <!-- 月亮 -->
+          <circle cx="320" cy="60" r="30" fill="url(#moonGlow)"/>
+          <circle cx="320" cy="60" r="18" fill="#fff9c4" opacity="0.9"/>
+          <circle cx="315" cy="55" r="5" fill="#f0e68c" opacity="0.5"/>
+
+          <!-- 浮动粒子 -->
+          <circle cx="80" cy="80" r="2" fill="#c4b5fd" opacity="0.6">
+            <animate attributeName="cy" values="80;75;80" dur="3s" repeatCount="indefinite"/>
+          </circle>
+          <circle cx="150" cy="50" r="1.5" fill="#ff6b35" opacity="0.5">
+            <animate attributeName="cy" values="50;45;50" dur="2.5s" repeatCount="indefinite"/>
+          </circle>
+          <circle cx="350" cy="120" r="2" fill="#6ee7b7" opacity="0.4">
+            <animate attributeName="cy" values="120;115;120" dur="3.5s" repeatCount="indefinite"/>
+          </circle>
+
+          <g transform="translate(200, 150)">
+            <!-- 草地 渐变瓦片 -->
+            <defs>
+              <linearGradient id="tile1" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#66bb6a"/>
+                <stop offset="100%" stop-color="#3d7a4f"/>
+              </linearGradient>
+              <linearGradient id="tile2" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#81c784"/>
+                <stop offset="100%" stop-color="#4a9d5e"/>
+              </linearGradient>
+            </defs>
+            <polygon points="0,-45 45,-22 0,1 -45,-22" fill="url(#tile1)"/>
+            <polygon points="45,-22 90,1 45,24 0,1" fill="url(#tile2)" opacity="0.9"/>
+            <polygon points="0,1 45,24 0,47 -45,24" fill="url(#tile1)" opacity="0.8"/>
+            <polygon points="-45,-22 0,1 -45,24 -90,1" fill="url(#tile2)" opacity="0.85"/>
+            <!-- 草地花纹 曲线 -->
+            <path d="M-30,-20 Q-25,-28 -20,-20" stroke="#81c784" stroke-width="1.5" fill="none" opacity="0.6"/>
+            <path d="M10,-15 Q15,-23 20,-15" stroke="#81c784" stroke-width="1.5" fill="none" opacity="0.6"/>
+            <circle cx="-15" cy="-10" r="2" fill="#a5d6a7" opacity="0.5"/>
+            <circle cx="25" cy="5" r="1.5" fill="#a5d6a7" opacity="0.5"/>
+
+            <!-- 矢量树 渐变 -->
+            <g transform="translate(-25, -50)">
+              <defs>
+                <linearGradient id="trunkGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#795548"/>
+                  <stop offset="100%" stop-color="#5d4037"/>
+                </linearGradient>
+                <radialGradient id="treeGrad" cx="30%" cy="30%">
+                  <stop offset="0%" stop-color="#81c784"/>
+                  <stop offset="60%" stop-color="#4caf50"/>
+                  <stop offset="100%" stop-color="#2e7d32"/>
+                </radialGradient>
+              </defs>
+              <rect x="-3" y="0" width="6" height="16" rx="2" fill="url(#trunkGrad)"/>
+              <ellipse cx="0" cy="-10" rx="16" ry="14" fill="url(#treeGrad)"/>
+              <!-- 高光 -->
+              <ellipse cx="-5" cy="-15" rx="6" ry="5" fill="#a5d6a7" opacity="0.5"/>
+            </g>
+
+            <!-- 矢量小屋 精致渐变 -->
+            <g transform="translate(20, -15)">
+              <defs>
+                <linearGradient id="roofGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#ef5350"/>
+                  <stop offset="100%" stop-color="#c62828"/>
+                </linearGradient>
+                <linearGradient id="wallLeft" x1="100%" y1="0%" x2="0%" y2="0%">
+                  <stop offset="0%" stop-color="#d7ccc8"/>
+                  <stop offset="100%" stop-color="#bcaaa4"/>
+                </linearGradient>
+                <linearGradient id="wallRight" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#d7ccc8"/>
+                  <stop offset="100%" stop-color="#a1887f"/>
+                </linearGradient>
+                <linearGradient id="wallTop" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#efebe9"/>
+                  <stop offset="100%" stop-color="#d7ccc8"/>
+                </linearGradient>
+              </defs>
+              <!-- 屋顶 -->
+              <polygon points="-16,-18 0,-34 16,-18" fill="url(#roofGrad)"/>
+              <polygon points="-16,-18 0,-34 0,-24 -16,-8" fill="#d32f2f" opacity="0.4"/>
+              <!-- 墙体 三面渐变 -->
+              <polygon points="-14,-18 0,-24 0,6 -14,0" fill="url(#wallLeft)"/>
+              <polygon points="0,-24 14,-18 14,0 0,6" fill="url(#wallRight)"/>
+              <polygon points="-14,-18 0,-24 14,-18 0,-12" fill="url(#wallTop)"/>
+              <!-- 窗户 发光感 -->
+              <rect x="-10" y="-13" width="5" height="7" rx="1" fill="#4fc3f7"/>
+              <rect x="-10" y="-13" width="5" height="2" fill="#81d4fa"/>
+              <rect x="-10" y="-13" width="5" height="7" rx="1" fill="#b3e5fc" opacity="0.3"/>
+              <rect x="5" y="-13" width="5" height="7" rx="1" fill="#29b6f6"/>
+              <rect x="5" y="-13" width="5" height="2" fill="#4fc3f7"/>
+              <rect x="5" y="-13" width="5" height="7" rx="1" fill="#81d4fa" opacity="0.3"/>
+              <!-- 门 -->
+              <rect x="-4" y="-2" width="8" height="8" rx="3" fill="#6d4c41"/>
+              <circle cx="2" cy="2" r="1" fill="#ffd54f"/>
+            </g>
+          </g>
+
+          <!-- 矢量猫咪 精致 -->
+          <g transform="translate(115, 188)">
+            <defs>
+              <radialGradient id="catBody" cx="30%" cy="30%">
+                <stop offset="0%" stop-color="#ffccbc"/>
+                <stop offset="50%" stop-color="#ff8a65"/>
+                <stop offset="100%" stop-color="#e64a19"/>
+              </radialGradient>
+              <radialGradient id="catHead" cx="30%" cy="30%">
+                <stop offset="0%" stop-color="#ffccbc"/>
+                <stop offset="50%" stop-color="#ff8a65"/>
+                <stop offset="100%" stop-color="#f4511e"/>
+              </radialGradient>
+            </defs>
+            <!-- 身体 -->
+            <ellipse cx="0" cy="3" rx="14" ry="11" fill="url(#catBody)"/>
+            <!-- 头 -->
+            <ellipse cx="0" cy="-9" rx="11" ry="10" fill="url(#catHead)"/>
+            <!-- 耳朵 -->
+            <polygon points="-9,-15 -5,-25 -1,-15" fill="url(#catHead)"/>
+            <polygon points="9,-15 5,-25 1,-15" fill="url(#catHead)"/>
+            <polygon points="-7.5,-16 -5,-22 -2.5,-16" fill="#ffcdd2"/>
+            <polygon points="7.5,-16 5,-22 2.5,-16" fill="#ffcdd2"/>
+            <!-- 眼睛 渐变 -->
+            <defs>
+              <radialGradient id="eyeGrad">
+                <stop offset="0%" stop-color="#fff"/>
+                <stop offset="40%" stop-color="#1a1a2e"/>
+                <stop offset="100%" stop-color="#0d0d1a"/>
+              </radialGradient>
+            </defs>
+            <ellipse cx="-4" cy="-9" rx="2.5" ry="3" fill="white"/>
+            <ellipse cx="4" cy="-9" rx="2.5" ry="3" fill="white"/>
+            <ellipse cx="-3.5" cy="-8.5" rx="1.8" ry="2.2" fill="url(#eyeGrad)"/>
+            <ellipse cx="4.5" cy="-8.5" rx="1.8" ry="2.2" fill="url(#eyeGrad)"/>
+            <circle cx="-3" cy="-9.5" r="0.8" fill="white"/>
+            <circle cx="5" cy="-9.5" r="0.8" fill="white"/>
+            <!-- 鼻子 -->
+            <ellipse cx="0" cy="-4.5" rx="1.5" ry="1" fill="#f06292"/>
+            <!-- 嘴 -->
+            <path d="M0,-3.5 Q-2,-2 -3,-3" stroke="#1a1a2e" stroke-width="1" fill="none"/>
+            <path d="M0,-3.5 Q2,-2 3,-3" stroke="#1a1a2e" stroke-width="1" fill="none"/>
+            <!-- 胡须 -->
+            <line x1="-7" y1="-4" x2="-14" y2="-5" stroke="#ffccbc" stroke-width="0.8" opacity="0.8"/>
+            <line x1="-7" y1="-2" x2="-14" y2="-1" stroke="#ffccbc" stroke-width="0.8" opacity="0.8"/>
+            <line x1="7" y1="-4" x2="14" y2="-5" stroke="#ffccbc" stroke-width="0.8" opacity="0.8"/>
+            <line x1="7" y1="-2" x2="14" y2="-1" stroke="#ffccbc" stroke-width="0.8" opacity="0.8"/>
+            <!-- 腮红 -->
+            <ellipse cx="-9" cy="-4" rx="3" ry="2" fill="#ffab91" opacity="0.4"/>
+            <ellipse cx="9" cy="-4" rx="3" ry="2" fill="#ffab91" opacity="0.4"/>
+            <!-- 尾巴 渐变色 -->
+            <path d="M12,3 Q22,-2 20,-12" stroke="url(#catBody)" stroke-width="5" fill="none" stroke-linecap="round"/>
+          </g>
+        </svg>
+      </div>
+      <div class="style-info">
+        <h3>矢量渐变风 <span class="tech-tag">PixiJS + SVG 生成</span></h3>
+        <p>在现有 PixiJS 基础上升级，用渐变、阴影、细节装饰大幅提升视觉品质。代码生成方式，零素材依赖。</p>
+        <div class="style-pros-cons">
+          <div class="pros">
+            <strong>优点</strong>
+            <ul>
+              <li>视觉表现力提升显著</li>
+              <li>仍为代码生成，零素材依赖</li>
+              <li>兼容现有技术栈，迁移成本低</li>
+            </ul>
+          </div>
+          <div class="cons">
+            <strong>缺点</strong>
+            <ul>
+              <li>代码量会明显增加</li>
+              <li>需优化绘制性能</li>
+              <li>不如手绘/3D 惊艳</li>
+            </ul>
+          </div>
+        </div>
+        <div class="style-complexity">
+          <span>实现难度</span>
+          <div class="complexity-bar"><div class="complexity-fill" style="width: 45%"></div></div>
+          <span>中等</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 技术栈对比 -->
+  <h2 class="section-title">技术栈对比详解</h2>
+  <div class="tech-compare">
+    <table>
+      <thead>
+        <tr>
+          <th>对比维度</th>
+          <th>当前：PixiJS Graphics</th>
+          <th>像素风：Sprite 图集</th>
+          <th>插画风：SVG/PNG</th>
+          <th>3D：Three.js</th>
+          <th>矢量渐变：PixiJS 增强</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>视觉表现力</td>
+          <td class="cross">★☆☆☆☆ 简陋</td>
+          <td class="partial">★★★★☆ 精致</td>
+          <td class="check">★★★★★ 治愈</td>
+          <td class="check">★★★★★ 震撼</td>
+          <td class="partial">★★★★☆ 精美</td>
+        </tr>
+        <tr>
+          <td>开发工作量</td>
+          <td class="check">小（已完成）</td>
+          <td class="partial">中大（需绘制+程序）</td>
+          <td class="cross">大（全量插画）</td>
+          <td class="cross">极大（3D全流程）</td>
+          <td class="partial">中（增量升级）</td>
+        </tr>
+        <tr>
+          <td>素材依赖</td>
+          <td class="check">零依赖</td>
+          <td class="cross">依赖美术</td>
+          <td class="cross">依赖插画师</td>
+          <td class="cross">依赖3D建模</td>
+          <td class="check">零依赖</td>
+        </tr>
+        <tr>
+          <td>性能表现</td>
+          <td class="check">优秀</td>
+          <td class="check">优秀</td>
+          <td class="partial">一般</td>
+          <td class="cross">压力大</td>
+          <td class="partial">良好</td>
+        </tr>
+        <tr>
+          <td>移动端适配</td>
+          <td class="check">轻松</td>
+          <td class="check">轻松</td>
+          <td class="partial">需多套素材</td>
+          <td class="cross">挑战大</td>
+          <td class="check">轻松</td>
+        </tr>
+        <tr>
+          <td>风格统一性</td>
+          <td class="check">100% 统一</td>
+          <td class="partial">需把控风格</td>
+          <td class="cross">考验画师水平</td>
+          <td class="partial">需把控建模风格</td>
+          <td class="check">100% 统一</td>
+        </tr>
+        <tr>
+          <td>可扩展性</td>
+          <td class="cross">低</td>
+          <td class="partial">中（需持续画）</td>
+          <td class="partial">中（需持续画）</td>
+          <td class="check">高（自由度大）</td>
+          <td class="partial">中高</td>
+        </tr>
+        <tr>
+          <td>与现有代码兼容</td>
+          <td class="check">—</td>
+          <td class="partial">部分兼容</td>
+          <td class="cross">改动大</td>
+          <td class="cross">近乎重写</td>
+          <td class="check">完全兼容</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 推荐方案 -->
+  <div class="summary">
+    <h3>💡 我的推荐</h3>
+    <p>
+      综合考虑开发效率、视觉提升、技术兼容性和项目阶段，我推荐采用<strong style="color: var(--accent-orange)">「矢量渐变风」</strong>作为升级方向。
+      在现有 PixiJS 技术栈基础上，通过渐变、光影、细节装饰、动画效果四个维度的增强，
+      可以在保持零素材依赖、100% 风格统一的前提下，将视觉品质提升 2-3 个档次。
+    </p>
+    <div class="recommendation">
+      <strong>推荐方案：PixiJS 矢量渐变增强版</strong>
+      <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">
+        增量升级 · 零素材依赖 · 中等开发量 · 显著视觉提升
+      </p>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

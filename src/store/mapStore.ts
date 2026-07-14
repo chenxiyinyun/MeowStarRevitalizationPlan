@@ -13,6 +13,7 @@ import { PAVE_ROAD_XP } from '@/types'
 import { getRoadType } from '@/game/data/roads'
 import { createInitialFogRegions, getFogRegionAt } from '@/game/data/fogRegions'
 import { useProgressStore } from './progressStore'
+import { useBuildingStore } from './buildingStore'
 
 interface MapStore {
   gridWidth: number
@@ -242,6 +243,10 @@ export const useMapStore = create<MapStore>((set, get) => ({
         : row
     )
     set({ tiles: newTiles })
+
+    setTimeout(() => {
+      useBuildingStore.getState().processZones()
+    }, 500)
 
     return { ok: true }
   },

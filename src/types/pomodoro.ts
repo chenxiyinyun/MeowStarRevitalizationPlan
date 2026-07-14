@@ -52,11 +52,40 @@ export interface PomodoroState {
 export const POMODORO_CONFIG = {
   /** 默认时长 25 分钟 */
   DURATION_MS: 25 * 60 * 1000,
-  /** 完成奖励 */
-  REWARD: { fuel: 3, xp: 50 } as PomodoroReward,
   /** 历史记录保留条数 */
   HISTORY_LIMIT: 100,
 } as const
+
+/**
+ * 根据专注时长（分钟）计算奖励
+ *
+ * 奖励规则：
+ * - Fuel: 每专注 10 分钟获得 1 燃料（向上取整），最低 1
+ * - XP: 基础 2 XP/分钟
+ * - 效率加成: 超过 30 分钟的部分额外 +50% XP（鼓励长时间专注）
+ *
+ * 示例：
+ * - 15分钟: fuel=2, xp=30
+ * - 25分钟: fuel=3, xp=50
+ * - 45分钟: fuel=5, xp=105 (基础90 + 加成15)
+ * - 60分钟: fuel=6, xp=150 (基础120 + 加成30)
+ * - 120分钟: fuel=12, xp=330 (基础240 + 加成90)
+ */
+export function calculateReward(minutes: number): PomodoroReward {
+  // Fuel: 每10分钟1燃料，向上取整
+  const fuel = Math.max(1, Math.ceil(minutes / 10))
+
+  // XP: 基础 2 XP/分钟
+  let xp = minutes * 2
+
+  // 效率加成：超过30分钟的部分 +50%
+  if (minutes > 30) {
+    const bonusMinutes = minutes - 30
+    xp += Math.floor(bonusMinutes * 2 * 0.5)
+  }
+
+  return { fuel, xp }
+}
 
 /** 番茄钟预设时长选项（分钟） */
 export const POMODORO_DURATION_PRESETS = [15, 25, 45] as const

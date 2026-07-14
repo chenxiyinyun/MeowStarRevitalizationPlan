@@ -24,7 +24,12 @@ import { getCatType } from '@/game/data/cats'
 import { getMapWorldBounds, gridToScreen, screenToGrid } from './iso'
 import { drawTerrain, drawRoad } from '@/game/render/tileRenderer'
 import { drawBuilding } from '@/game/render/buildingRenderer'
-import { drawCat as drawCatSprite } from '@/game/render/catRenderer'
+import { drawCat as drawCatProcedural } from '@/game/render/catRenderer'
+import { drawTerrainSprite, drawRoadSprite } from '@/game/render/spriteTileRenderer'
+import { drawBuildingSprite } from '@/game/render/spriteBuildingRenderer'
+import { drawCatSprite } from '@/game/render/spriteCatRenderer'
+import { assetManager } from '@/game/engine/AssetManager'
+import { ALL_SPRITES } from '@/game/data/spriteConfig'
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value))
@@ -99,6 +104,7 @@ export class MapEngine {
   private resizeObserver: ResizeObserver | null = null
   private initialized = false
   private destroyed = false
+  private useSpriteRendering = false
 
   /** 迷雾揭开动画进行中标记（阻止 renderFog 清除正在动画的遮罩） */
   private fogAnimationInProgress = false
@@ -108,13 +114,15 @@ export class MapEngine {
     tiles: TileData[][],
     gridWidth: number,
     gridHeight: number,
-    tileSize: TileSize
+    tileSize: TileSize,
+    options?: { useSpriteRendering?: boolean }
   ) {
     this.container = container
     this.tiles = tiles
     this.gridWidth = gridWidth
     this.gridHeight = gridHeight
     this.tileSize = tileSize
+    this.useSpriteRendering = options?.useSpriteRendering ?? false
 
     this.app = new Application()
     this.worldContainer = new Container()
@@ -159,6 +167,16 @@ export class MapEngine {
     this.buildingLayer.sortableChildren = true
     this.catLayer.sortableChildren = true
 
+    // 加载精灵资源（如果启用精灵渲染）
+    if (this.useSpriteRendering) {
+      try {
+        await assetManager.loadAll(ALL_SPRITES)
+      } catch (e) {
+        console.warn('[MapEngine] 精灵资源加载失败，回退到程序化渲染:', e)
+        this.useSpriteRendering = false
+      }
+    }
+
     this.centerCamera()
     this.createTiles()
     this.updateViewport()
@@ -200,9 +218,16 @@ export class MapEngine {
 
     if (tile.terrain === 'road') {
       const neighbors = getRoadNeighbors(this.tiles, x, y, this.gridWidth, this.gridHeight)
-      drawRoad(container, neighbors, tile.roadType, sx, sy, this.tileSize)
+      const spriteOk = this.useSpriteRendering && drawRoadSprite(container, neighbors, sx, sy, this.tileSize)
+      if (!spriteOk) {
+        drawRoad(container, neighbors, tile.roadType, sx, sy, this.tileSize)
+      }
     } else {
-      drawTerrain(container, tile.terrain, sx, sy, this.tileSize)
+      const variant = (x + y) % 3 === 0 ? 'variant1' : (x + y) % 3 === 1 ? 'variant2' : 'base'
+      const spriteOk = this.useSpriteRendering && drawTerrainSprite(container, tile.terrain, sx, sy, this.tileSize, variant)
+      if (!spriteOk) {
+        drawTerrain(container, tile.terrain, sx, sy, this.tileSize)
+      }
     }
   }
 
@@ -228,7 +253,10 @@ export class MapEngine {
 
       const { sx, sy } = gridToScreen(building.x, building.y, this.tileSize)
       const container = new Container()
-      drawBuilding(container, buildingType, sx, sy, this.tileSize)
+      const spriteOk = this.useSpriteRendering && drawBuildingSprite(container, buildingType, sx, sy, this.tileSize)
+      if (!spriteOk) {
+        drawBuilding(container, buildingType, sx, sy, this.tileSize)
+      }
       container.zIndex = building.x + building.y
       this.buildingLayer.addChild(container)
       this.buildingGraphics.set(building.id, container)
@@ -310,12 +338,22 @@ export class MapEngine {
   }
 
   /**
-   * 绘制猫咪（委托给 catRenderer，按 state 切换 idle/walk 姿态）
+   * 绘制猫咪（优先精灵渲染，失败回退到程序化渲染）
    */
   private drawCat(cat: CatInstance): Container {
     const catType = getCatType(cat.typeId)
-    const state: 'idle' | 'walk' = cat.state === 'walking' ? 'walk' : 'idle'
-    return drawCatSprite(
+    const state: 'idle' | 'walk' | 'sleep' =
+      cat.state === 'walking' ? 'walk' : cat.state === 'sleeping' ? 'sleep' : 'idle'
+
+    const container = new Container()
+
+    if (catType && this.useSpriteRendering) {
+      const shortId = catType.id.replace('cat_', '')
+      const spriteOk = drawCatSprite(container, { catId: shortId, state, frame: 0 })
+      if (spriteOk) return container
+    }
+
+    return drawCatProcedural(
       catType ?? {
         id: '',
         name: '',
@@ -325,7 +363,7 @@ export class MapEngine {
         color: 0xffffff,
         unlockCondition: { type: 'initial' },
       },
-      state
+      state === 'sleep' ? 'idle' : state
     )
   }
 

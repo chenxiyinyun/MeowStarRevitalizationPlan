@@ -8,41 +8,36 @@ import { useProgressStore } from '@/store/progressStore'
 import { useLevelUpUnlock } from '@/hooks/useLevelUpUnlock'
 import { useSound } from '@/hooks/useSound'
 
-/** 放置错误提示文案 */
 const PLACEMENT_ERROR_MESSAGES: Record<string, string> = {
-  locked: '该区域未解锁',
-  occupied: '该位置已有建筑',
-  no_fuel: '燃料不足',
-  locked_building: '建筑未解锁',
-  out_of_bounds: '位置超出地图范围',
-  water: '水面不可放置建筑',
+  locked: '🔒 该区域未解锁',
+  occupied: '🏠 该位置已有建筑',
+  no_fuel: '⛽ 燃料不足',
+  locked_building: '🔒 建筑未解锁',
+  out_of_bounds: '📍 位置超出地图范围',
+  water: '💧 水面不可放置建筑',
 }
 
-/** 铺路错误提示文案 */
 const PAVE_ERROR_MESSAGES: Record<string, string> = {
-  locked: '该区域未解锁',
-  no_fuel: '燃料不足',
-  locked_road: '道路类型未解锁',
-  out_of_bounds: '位置超出地图范围',
-  water: '水面不可铺设道路',
+  locked: '🔒 该区域未解锁',
+  no_fuel: '⛽ 燃料不足',
+  locked_road: '🔒 道路类型未解锁',
+  out_of_bounds: '📍 位置超出地图范围',
+  water: '💧 水面不可铺设道路',
 }
 
-/** 拆除错误提示文案 */
 const DEMOLISH_ERROR_MESSAGES: Record<string, string> = {
-  no_building: '该位置没有建筑',
-  out_of_bounds: '位置超出地图范围',
+  no_building: '🏗️ 该位置没有建筑',
+  out_of_bounds: '📍 位置超出地图范围',
 }
 
-/** 移动错误提示文案 */
 const MOVE_ERROR_MESSAGES: Record<string, string> = {
-  no_building: '该位置没有建筑',
-  out_of_bounds: '位置超出地图范围',
-  locked: '目标区域未解锁',
-  occupied: '目标位置已有建筑',
-  water: '水面不可放置建筑',
+  no_building: '🏗️ 该位置没有建筑',
+  out_of_bounds: '📍 位置超出地图范围',
+  locked: '🔒 目标区域未解锁',
+  occupied: '🏠 目标位置已有建筑',
+  water: '💧 水面不可放置建筑',
 }
 
-/** 迷雾区域名称 */
 const FOG_REGION_NAMES: Record<string, string> = {
   east: '东区',
   west: '西区',
@@ -57,6 +52,8 @@ const FOG_REGION_NAMES: Record<string, string> = {
 function GamePage() {
   const nickname = useUserStore((s) => s.profile?.nickname ?? '喵星开拓者')
   const level = useProgressStore((s) => s.level)
+  const fuel = useProgressStore((s) => s.fuel)
+  const population = useProgressStore((s) => s.population)
   const { play, muted, toggleMute } = useSound()
   const [selectedBuildingType, setSelectedBuildingType] = useState<string | null>(null)
   const [selectedRoadType, setSelectedRoadType] = useState<string | null>(null)
@@ -71,7 +68,6 @@ function GamePage() {
 
   const { notification, dismissNotification } = useLevelUpUnlock()
 
-  // 等级提升音效
   const prevLevelRef = useRef(level)
   useEffect(() => {
     if (level > prevLevelRef.current) {
@@ -80,7 +76,6 @@ function GamePage() {
     prevLevelRef.current = level
   }, [level, play])
 
-  // ESC 键取消放置/铺路/拆除/移动模式
   useEffect(() => {
     if (!selectedBuildingType && !selectedRoadType && !demolishMode && !moveMode) return
     const onKeydown = (e: KeyboardEvent) => {
@@ -95,7 +90,6 @@ function GamePage() {
     return () => window.removeEventListener('keydown', onKeydown)
   }, [selectedBuildingType, selectedRoadType, demolishMode, moveMode])
 
-  // 放置结果回调
   const onPlacementResult = useCallback(
     (success: boolean, reason?: string, bonusXp?: number, adjacentToRoad?: boolean) => {
       if (success) {
@@ -103,8 +97,8 @@ function GamePage() {
         const baseXp = 10
         const totalXp = baseXp + (bonusXp ?? 0)
         const msg = adjacentToRoad
-          ? `建筑放置成功！XP +${totalXp}（邻路加成 +${bonusXp}）`
-          : `建筑放置成功！XP +${totalXp}`
+          ? `✨ 放置成功！XP +${totalXp}（邻路加成 +${bonusXp}）`
+          : `✨ 放置成功！XP +${totalXp}`
         setToast({ message: msg, type: 'success' })
       } else {
         const msg = reason ? (PLACEMENT_ERROR_MESSAGES[reason] ?? '放置失败') : '放置失败'
@@ -115,12 +109,11 @@ function GamePage() {
     [play]
   )
 
-  // 铺路结果回调
   const onPaveResult = useCallback(
     (success: boolean, reason?: string) => {
       if (success) {
         play('place')
-        setToast({ message: '道路铺设成功！XP +5', type: 'success' })
+        setToast({ message: '🛤️ 道路铺设成功！XP +5', type: 'success' })
       } else {
         const msg = reason ? (PAVE_ERROR_MESSAGES[reason] ?? '铺设失败') : '铺设失败'
         setToast({ message: msg, type: 'error' })
@@ -130,14 +123,13 @@ function GamePage() {
     [play]
   )
 
-  // 拆除结果回调
   const onDemolishResult = useCallback(
     (success: boolean, reason?: string, refundedFuel?: number, buildingName?: string) => {
       if (success) {
         play('place')
         const fuelMsg = refundedFuel && refundedFuel > 0 ? ` · 返还 ⛽${refundedFuel}` : ''
         setToast({
-          message: `已拆除${buildingName ? ' ' + buildingName : ''}${fuelMsg}`,
+          message: `🔨 已拆除${buildingName ? ' ' + buildingName : ''}${fuelMsg}`,
           type: 'success',
         })
       } else {
@@ -149,13 +141,12 @@ function GamePage() {
     [play]
   )
 
-  // 移动结果回调
   const onMoveResult = useCallback(
     (success: boolean, reason?: string, buildingName?: string) => {
       if (success) {
         play('place')
         setToast({
-          message: `已移动${buildingName ? ' ' + buildingName : ''}到新位置`,
+          message: `📦 已移动${buildingName ? ' ' + buildingName : ''}到新位置`,
           type: 'success',
         })
       } else {
@@ -167,59 +158,81 @@ function GamePage() {
     [play]
   )
 
-  // 解锁通知
   let unlockToast: { message: string; type: 'info' } | null = null
   if (notification) {
     const parts: string[] = []
     if (notification.buildingNames && notification.buildingNames.length > 0) {
-      parts.push(`解锁新建筑：${notification.buildingNames.join('、')}`)
+      parts.push(`🏗️ ${notification.buildingNames.join('、')}`)
     }
     if (notification.fogRegionIds && notification.fogRegionIds.length > 0) {
       const names = notification.fogRegionIds.map((id) => FOG_REGION_NAMES[id] ?? id)
-      parts.push(`揭开新区域：${names.join('、')}`)
+      parts.push(`🗺️ ${names.join('、')}`)
     }
     unlockToast = { message: parts.join(' · '), type: 'info' }
   }
 
+  const currentMode = demolishMode
+    ? { text: '🔨 拆除模式 - 点击建筑拆除', color: 'bg-red-100 border-red-400 text-red-700' }
+    : moveMode
+      ? { text: '📦 移动模式 - 点击建筑→点击空地', color: 'bg-blue-100 border-blue-400 text-blue-700' }
+      : selectedRoadType
+        ? { text: '🛤️ 铺路模式 - 点击地图铺设道路', color: 'bg-amber-100 border-amber-400 text-amber-700' }
+        : selectedBuildingType
+          ? { text: '🏗️ 建造模式 - 点击地图放置建筑', color: 'bg-green-100 border-green-400 text-green-700' }
+          : null
+
   return (
-    <div className="flex h-full flex-col">
-      {/* 顶部导航 */}
-      <header className="flex items-center justify-between border-b border-border-subtle px-4 py-2 md:px-6 md:py-3">
-        <Link
-          to="/"
-          className="text-sm text-text-secondary transition-colors hover:text-text-primary"
-        >
-          ← 首页
-        </Link>
-        <h1 className="font-display text-base text-accent-orange md:text-xl">喵星复兴计划</h1>
-        <div className="flex items-center gap-2">
+    <div className="flex h-full flex-col bg-bg-warm">
+      <header className="wood-texture border-b-4 border-wood-dark px-3 py-2 md:px-4 md:py-2">
+        <div className="flex items-center justify-between">
           <Link
-            to="/stats"
-            className="rounded-lg border border-border-subtle px-2 py-1 text-xs text-text-secondary transition-colors hover:text-accent-lavender"
-            title="专注统计"
+            to="/"
+            className="pixel-btn-secondary text-xs px-3 py-1.5 md:text-sm md:px-4 md:py-2"
           >
-            📊 统计
+            ← 首页
           </Link>
-          <button
-            onClick={toggleMute}
-            className="rounded-lg border border-border-subtle px-2 py-1 text-xs text-text-secondary transition-colors hover:text-text-primary"
-            title={muted ? '开启音效' : '静音'}
-          >
-            {muted ? '🔇' : '🔊'}
-          </button>
-          <span className="hidden text-sm text-text-secondary md:inline">{nickname}</span>
+
+          <div className="flex items-center gap-1 md:gap-2">
+            <div className="stat-badge flex items-center gap-1 text-xs md:text-sm">
+              <span>⭐</span>
+              <span>Lv.{level}</span>
+            </div>
+            <div className="stat-badge flex items-center gap-1 text-xs md:text-sm" style={{ background: 'linear-gradient(180deg, #81c784 0%, #66bb6a 100%)' }}>
+              <span>👥</span>
+              <span>{population}</span>
+            </div>
+            <div className="stat-badge flex items-center gap-1 text-xs md:text-sm" style={{ background: 'linear-gradient(180deg, #ffb74d 0%, #ff9800 100%)' }}>
+              <span>⛽</span>
+              <span>{fuel}</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1 md:gap-2">
+            <Link
+              to="/stats"
+              className="pixel-btn-secondary text-xs px-2 py-1.5 md:text-sm md:px-3 md:py-2"
+              title="专注统计"
+            >
+              📊
+            </Link>
+            <button
+              onClick={toggleMute}
+              className="pixel-btn-secondary text-xs px-2 py-1.5 md:text-sm md:px-3 md:py-2"
+              title={muted ? '开启音效' : '静音'}
+            >
+              {muted ? '🔇' : '🔊'}
+            </button>
+            <span className="hidden font-display text-sm text-cream md:inline">{nickname}</span>
+          </div>
         </div>
       </header>
 
-      {/* 主体：桌面三栏 / 移动端全屏地图 + 抽屉 */}
       <div className="flex flex-1 overflow-hidden">
-        {/* 左侧番茄钟面板 —— 桌面端 */}
-        <aside className="hidden w-80 shrink-0 overflow-y-auto border-r border-border-subtle p-6 scrollbar-thin md:block">
+        <aside className="hidden w-72 shrink-0 overflow-y-auto border-r-4 border-wood-dark bg-bg-paper p-4 scrollbar-thin lg:block">
           <PomodoroTimer />
         </aside>
 
-        {/* 中间地图区域 */}
-        <main className="relative flex-1">
+        <main className="relative flex-1 overflow-hidden bg-gradient-to-b from-sky-200 via-sky-100 to-green-100">
           <MapView
             placementBuildingType={selectedBuildingType}
             pavingRoadType={selectedRoadType}
@@ -231,65 +244,56 @@ function GamePage() {
             onMoveResult={onMoveResult}
           />
 
-          {/* 放置/铺路/拆除/移动模式提示 */}
-          {(selectedBuildingType || selectedRoadType || demolishMode || moveMode) && (
-            <div className="pointer-events-none absolute top-4 left-1/2 -translate-x-1/2 rounded-lg bg-bg-deep/80 px-4 py-2 backdrop-blur-sm">
-              <p
-                className={`text-sm ${
-                  demolishMode ? 'text-red-400' : moveMode ? 'text-blue-400' : 'text-accent-mint'
+          {currentMode && (
+            <div className="pointer-events-none absolute top-3 left-1/2 -translate-x-1/2 z-20">
+              <div className={`border-3 px-4 py-2 font-display text-sm shadow-[0_3px_0_rgba(93,64,55,0.3)] ${currentMode.color}`}>
+                {currentMode.text}
+                <span className="ml-2 text-xs opacity-70">按 ESC 取消</span>
+              </div>
+            </div>
+          )}
+
+          {toast && (
+            <div className="pointer-events-none absolute bottom-24 left-1/2 -translate-x-1/2 z-20 md:bottom-4">
+              <div
+                className={`border-3 px-4 py-2 font-display text-sm shadow-[0_3px_0_rgba(93,64,55,0.3)] ${
+                  toast.type === 'success'
+                    ? 'bg-green-100 border-green-500 text-green-800'
+                    : toast.type === 'error'
+                      ? 'bg-red-100 border-red-500 text-red-800'
+                      : 'bg-purple-100 border-purple-500 text-purple-800'
                 }`}
               >
-                {demolishMode
-                  ? '点击建筑拆除 · ESC 取消'
-                  : moveMode
-                    ? '点击建筑选中 → 点击空地移动 · ESC 取消'
-                    : selectedRoadType
-                      ? '点击地图铺设道路 · ESC 取消'
-                      : '点击地图放置 · ESC 取消'}
-              </p>
-            </div>
-          )}
-
-          {/* 操作 Toast */}
-          {toast && (
-            <div
-              className={`pointer-events-none absolute bottom-20 left-1/2 -translate-x-1/2 rounded-lg px-4 py-2 backdrop-blur-sm md:bottom-4 ${
-                toast.type === 'success'
-                  ? 'bg-accent-mint/20 text-accent-mint'
-                  : toast.type === 'error'
-                    ? 'bg-red-500/20 text-red-400'
-                    : 'bg-accent-lavender/20 text-accent-lavender'
-              }`}
-            >
-              <p className="text-sm font-medium">{toast.message}</p>
-            </div>
-          )}
-
-          {/* 解锁通知 */}
-          {unlockToast && (
-            <div className="absolute top-4 right-4 max-w-xs rounded-xl border border-accent-lavender/30 bg-bg-deep/90 p-4 backdrop-blur-md">
-              <div className="mb-1 flex items-center gap-2">
-                <span className="text-lg">🎉</span>
-                <span className="font-display text-sm text-accent-lavender">新解锁！</span>
+                {toast.message}
               </div>
-              <p className="text-xs text-text-primary">{unlockToast.message}</p>
-              <button
-                onClick={dismissNotification}
-                className="mt-2 text-xs text-text-secondary hover:text-text-primary"
-              >
-                知道了
-              </button>
             </div>
           )}
 
-          {/* 移动端浮动按钮组 */}
-          <div className="absolute right-3 top-3 flex flex-col gap-2 md:hidden">
+          {unlockToast && (
+            <div className="absolute top-3 right-3 z-30 max-w-[280px]">
+              <div className="pixel-panel bg-gradient-to-br from-yellow-50 to-orange-50 p-4">
+                <div className="mb-2 flex items-center gap-2">
+                  <span className="text-2xl animate-bounce-soft">🎉</span>
+                  <span className="font-display text-lg text-accent-orange">新解锁！</span>
+                </div>
+                <p className="text-sm text-text-secondary mb-3">{unlockToast.message}</p>
+                <button
+                  onClick={dismissNotification}
+                  className="pixel-btn-yellow w-full text-sm"
+                >
+                  知道了 ✨
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className="absolute right-3 top-3 z-20 flex flex-col gap-2 lg:hidden">
             <button
               onClick={() => {
                 setMobilePomodoroOpen((v) => !v)
                 setMobilePanelOpen(false)
               }}
-              className="flex h-11 w-11 items-center justify-center rounded-full bg-accent-orange text-xl shadow-lg shadow-accent-orange/30"
+              className="pixel-btn h-12 w-12 p-0 text-xl"
               title="番茄钟"
             >
               🍅
@@ -299,7 +303,7 @@ function GamePage() {
                 setMobilePanelOpen((v) => !v)
                 setMobilePomodoroOpen(false)
               }}
-              className="flex h-11 w-11 items-center justify-center rounded-full bg-bg-card text-xl shadow-lg backdrop-blur-md"
+              className="pixel-btn-secondary h-12 w-12 p-0 text-xl"
               title="建筑面板"
             >
               🏗️
@@ -307,8 +311,7 @@ function GamePage() {
           </div>
         </main>
 
-        {/* 右侧建筑面板 —— 桌面端 */}
-        <aside className="hidden w-72 shrink-0 border-l border-border-subtle bg-bg-card/30 md:block">
+        <aside className="hidden w-72 shrink-0 border-l-4 border-wood-dark bg-bg-paper lg:block">
           <BuildingPanel
             selectedBuildingType={selectedBuildingType}
             onSelect={setSelectedBuildingType}
@@ -322,15 +325,14 @@ function GamePage() {
         </aside>
       </div>
 
-      {/* 移动端番茄钟抽屉 */}
       {mobilePomodoroOpen && (
         <div
-          className="absolute inset-0 z-40 md:hidden"
+          className="absolute inset-0 z-40 lg:hidden"
           onClick={() => setMobilePomodoroOpen(false)}
         >
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div className="absolute inset-0 bg-black/30" />
           <div
-            className="absolute top-16 left-3 right-3 max-h-[70vh] overflow-y-auto rounded-2xl border border-border-subtle bg-bg-deep p-4 scrollbar-thin"
+            className="absolute top-16 left-3 right-3 max-h-[70vh] overflow-y-auto pixel-panel p-4 scrollbar-thin"
             onClick={(e) => e.stopPropagation()}
           >
             <PomodoroTimer />
@@ -338,16 +340,15 @@ function GamePage() {
         </div>
       )}
 
-      {/* 移动端建筑面板抽屉 */}
       {mobilePanelOpen && (
-        <div className="absolute inset-0 z-40 md:hidden" onClick={() => setMobilePanelOpen(false)}>
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+        <div className="absolute inset-0 z-40 lg:hidden" onClick={() => setMobilePanelOpen(false)}>
+          <div className="absolute inset-0 bg-black/30" />
           <div
-            className="absolute bottom-0 left-0 right-0 max-h-[70vh] overflow-y-auto rounded-t-2xl border-t border-border-subtle bg-bg-deep scrollbar-thin"
+            className="absolute bottom-0 left-0 right-0 max-h-[75vh] overflow-y-auto pixel-panel rounded-b-none scrollbar-thin"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="sticky top-0 flex justify-center bg-bg-deep py-2">
-              <div className="h-1 w-10 rounded-full bg-text-dim" />
+            <div className="sticky top-0 flex justify-center bg-bg-card py-3">
+              <div className="h-2 w-12 rounded-full bg-wood-light" />
             </div>
             <BuildingPanel
               selectedBuildingType={selectedBuildingType}

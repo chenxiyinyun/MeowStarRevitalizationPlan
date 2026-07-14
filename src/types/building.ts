@@ -12,6 +12,10 @@ export type BuildingCategory =
   | 'facility'
   | 'decoration'
   | 'landmark'
+  | 'zone'
+
+/** 规划区域类型 */
+export type ZoneType = 'residential' | 'commercial' | 'industrial'
 
 /** 建筑类型配置（静态数据） */
 export interface BuildingType {
@@ -26,6 +30,10 @@ export interface BuildingType {
   color: number
   /** 等距渲染高度（像素），用于 3D 立体效果 */
   height: number
+  /** 规划区域类型（仅 zone 类别有效） */
+  zoneType?: ZoneType
+  /** 建筑可容纳人口（仅 residence 类别有效） */
+  capacity?: number
 }
 
 /** 建筑实例（放置在地图上的具体建筑） */
@@ -48,6 +56,7 @@ export interface CategoryInfo {
 export const BUILDING_CATEGORIES: CategoryInfo[] = [
   { key: 'nature', label: '自然', icon: '🌿' },
   { key: 'road', label: '道路', icon: '🛤️' },
+  { key: 'zone', label: '规划区域', icon: '📐' },
   { key: 'residence', label: '住宅', icon: '🏠' },
   { key: 'commercial', label: '商业', icon: '🏪' },
   { key: 'facility', label: '设施', icon: '💡' },
@@ -90,6 +99,20 @@ export type MoveResult =
       ok: false
       reason: 'no_building' | 'out_of_bounds' | 'locked' | 'occupied' | 'water'
     }
+
+/** 规划区域颜色 */
+export const ZONE_COLORS: Record<ZoneType, { base: number; outline: number }> = {
+  residential: { base: 0x66bb6a, outline: 0x2e7d32 },
+  commercial: { base: 0x42a5f5, outline: 0x1565c0 },
+  industrial: { base: 0xff7043, outline: 0xc62828 },
+}
+
+/** 规划区域图标 */
+export const ZONE_ICONS: Record<ZoneType, string> = {
+  residential: '🏠',
+  commercial: '🏪',
+  industrial: '🏭',
+}
 
 // ─── 道路类型（独立于建筑系统，作为地形铺设） ───────────────
 

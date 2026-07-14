@@ -1,0 +1,1355 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>像素风细分风格对比 · 喵星复兴计划</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg-deep: #0a0e1a;
+    --bg-card: rgba(255, 255, 255, 0.04);
+    --bg-card-hover: rgba(255, 255, 255, 0.08);
+    --accent-orange: #ff6b35;
+    --accent-lavender: #c4b5fd;
+    --accent-mint: #6ee7b7;
+    --accent-pink: #f9a8d4;
+    --text-primary: #f8f9fa;
+    --text-secondary: rgba(248, 249, 250, 0.65);
+    --text-dim: rgba(248, 249, 250, 0.35);
+    --border-subtle: rgba(255, 255, 255, 0.06);
+  }
+
+  body {
+    font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 48px 24px;
+  }
+
+  .bg-glow {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+  .bg-glow .glow-1 {
+    position: absolute;
+    left: 5%;
+    top: -5%;
+    width: 400px;
+    height: 400px;
+    border-radius: 50%;
+    background: rgba(255, 107, 53, 0.12);
+    filter: blur(100px);
+  }
+  .bg-glow .glow-2 {
+    position: absolute;
+    right: 5%;
+    bottom: -5%;
+    width: 450px;
+    height: 450px;
+    border-radius: 50%;
+    background: rgba(196, 181, 253, 0.12);
+    filter: blur(120px);
+  }
+
+  header {
+    position: relative;
+    z-index: 10;
+    text-align: center;
+    margin-bottom: 48px;
+  }
+  header .back-link {
+    display: inline-block;
+    margin-bottom: 16px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 14px;
+    transition: color 0.2s;
+  }
+  header .back-link:hover { color: var(--text-primary); }
+  header h1 {
+    font-size: 42px;
+    font-weight: 900;
+    margin-bottom: 12px;
+    color: var(--text-primary);
+  }
+  header h1 span {
+    background: linear-gradient(135deg, var(--accent-orange), var(--accent-lavender));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  header p {
+    font-size: 16px;
+    color: var(--text-secondary);
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  .section-title {
+    position: relative;
+    z-index: 10;
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .section-title::before {
+    content: '';
+    width: 4px;
+    height: 24px;
+    background: linear-gradient(180deg, var(--accent-orange), var(--accent-lavender));
+    border-radius: 2px;
+  }
+
+  /* 风格卡片 */
+  .style-grid {
+    position: relative;
+    z-index: 10;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    margin-bottom: 64px;
+  }
+
+  .style-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 20px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+  }
+  .style-card:hover {
+    border-color: rgba(255, 107, 53, 0.3);
+    transform: translateY(-3px);
+    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.3);
+  }
+  .style-card.recommended {
+    border-color: var(--accent-orange);
+  }
+
+  .style-preview {
+    width: 100%;
+    height: 320px;
+    background: #1a1c2e;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .style-preview svg {
+    width: 100%;
+    height: 100%;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+
+  .style-badge {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    z-index: 5;
+  }
+  .badge-recommended {
+    background: rgba(255, 107, 53, 0.15);
+    color: var(--accent-orange);
+    border: 1px solid rgba(255, 107, 53, 0.3);
+  }
+  .badge-tag {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    background: rgba(196, 181, 253, 0.15);
+    color: var(--accent-lavender);
+    border: 1px solid rgba(196, 181, 253, 0.3);
+    z-index: 5;
+  }
+
+  .style-info {
+    padding: 24px;
+  }
+  .style-info h3 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .style-info .sub-title {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+  }
+  .style-info > p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: 16px;
+  }
+
+  .style-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 10px;
+  }
+  .meta-item {
+    text-align: center;
+  }
+  .meta-item .meta-label {
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+  }
+  .meta-item .meta-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .style-pros-cons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .pros, .cons {
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .pros strong { color: var(--accent-mint); display: block; margin-bottom: 4px; }
+  .cons strong { color: #f87171; display: block; margin-bottom: 4px; }
+  .pros ul, .cons ul { list-style: none; padding-left: 0; }
+  .pros li::before { content: '✓ '; color: var(--accent-mint); }
+  .cons li::before { content: '✗ '; color: #f87171; }
+
+  /* 代表作品 */
+  .ref-games {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-subtle);
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+  .ref-games strong {
+    color: var(--text-secondary);
+    margin-right: 6px;
+  }
+
+  /* 技术实现对比表 */
+  .tech-compare {
+    position: relative;
+    z-index: 10;
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 20px;
+    overflow: hidden;
+    margin-bottom: 64px;
+  }
+  .tech-compare table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .tech-compare th {
+    background: rgba(255, 255, 255, 0.02);
+    padding: 14px 16px;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border-subtle);
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  .tech-compare td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+    font-size: 12px;
+  }
+  .tech-compare tr:last-child td { border-bottom: none; }
+  .tech-compare td:first-child {
+    color: var(--text-primary);
+    font-weight: 500;
+    width: 140px;
+  }
+  .tech-compare .check { color: var(--accent-mint); }
+  .tech-compare .cross { color: #f87171; }
+  .tech-compare .partial { color: #fbbf24; }
+
+  /* 色板展示 */
+  .palette-section {
+    position: relative;
+    z-index: 10;
+    margin-bottom: 64px;
+  }
+  .palette-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+  }
+  .palette-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 16px;
+    padding: 16px;
+  }
+  .palette-card h4 {
+    font-size: 13px;
+    margin-bottom: 12px;
+    color: var(--text-primary);
+  }
+  .palette-colors {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .palette-color {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  .palette-color:hover { transform: scale(1.2); }
+
+  /* 底部总结 */
+  .summary {
+    position: relative;
+    z-index: 10;
+    background: linear-gradient(135deg, rgba(255, 107, 53, 0.1), rgba(196, 181, 253, 0.1));
+    border: 1px solid rgba(255, 107, 53, 0.2);
+    border-radius: 20px;
+    padding: 36px;
+    text-align: center;
+  }
+  .summary h3 {
+    font-size: 22px;
+    margin-bottom: 12px;
+  }
+  .summary p {
+    color: var(--text-secondary);
+    line-height: 1.7;
+    max-width: 700px;
+    margin: 0 auto;
+    font-size: 14px;
+  }
+  .summary .recommendation {
+    margin-top: 20px;
+    padding: 14px 24px;
+    background: rgba(255, 107, 53, 0.15);
+    border: 1px solid rgba(255, 107, 53, 0.3);
+    border-radius: 12px;
+    display: inline-block;
+  }
+  .summary .recommendation strong {
+    color: var(--accent-orange);
+    font-size: 15px;
+  }
+</style>
+</head>
+<body>
+<div class="bg-glow">
+  <div class="glow-1"></div>
+  <div class="glow-2"></div>
+</div>
+
+<div class="container">
+  <header>
+    <a href="art-style-comparison.html" class="back-link">← 返回风格总览</a>
+    <h1>像素风 <span>细分风格对比</span></h1>
+    <p>像素风并非只有一种面貌——从复古 8-bit 到现代柔和像素，从明亮治愈到深色赛博，选择适合喵星调性的方向</p>
+  </header>
+
+  <!-- 五种像素风格 -->
+  <h2 class="section-title">五种像素风格方向</h2>
+  <div class="style-grid">
+
+    <!-- 风格1：16-bit 日式治愈风 -->
+    <div class="style-card recommended">
+      <div class="style-preview">
+        <span class="style-badge badge-recommended">推荐</span>
+        <span class="badge-tag">16-bit 日式</span>
+        <svg viewBox="0 0 400 320" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+          <!-- 天空渐变 -->
+          <defs>
+            <linearGradient id="sky1" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#87ceeb"/>
+              <stop offset="60%" stop-color="#b0e0e6"/>
+              <stop offset="100%" stop-color="#98d8c8"/>
+            </linearGradient>
+          </defs>
+          <rect width="400" height="320" fill="url(#sky1)"/>
+          <!-- 云 -->
+          <g fill="white">
+            <rect x="50" y="30" width="30" height="6"/>
+            <rect x="46" y="36" width="38" height="4"/>
+            <rect x="280" y="50" width="36" height="6"/>
+            <rect x="276" y="56" width="44" height="4"/>
+          </g>
+          <!-- 远山 -->
+          <g fill="#7cb9a5">
+            <rect x="0" y="160" width="80" height="6"/>
+            <rect x="10" y="154" width="60" height="6"/>
+            <rect x="20" y="148" width="40" height="6"/>
+            <rect x="30" y="142" width="20" height="6"/>
+            <rect x="300" y="165" width="70" height="6"/>
+            <rect x="310" y="159" width="50" height="6"/>
+            <rect x="320" y="153" width="30" height="6"/>
+          </g>
+
+          <!-- 等距地面 草地 -->
+          <g transform="translate(200, 200)">
+            <!-- 草地瓦片 用小方格拼出像素感 -->
+            <defs>
+              <pattern id="grassPattern" x="0" y="0" width="8" height="4" patternUnits="userSpaceOnUse">
+                <rect width="8" height="4" fill="#4caf50"/>
+                <rect x="0" y="0" width="2" height="2" fill="#66bb6a"/>
+                <rect x="4" y="2" width="2" height="2" fill="#388e3c"/>
+              </pattern>
+            </defs>
+            <!-- 菱形地面 -->
+            <polygon points="0,-50 70,-25 0,0 -70,-25" fill="#4caf50"/>
+            <polygon points="70,-25 140,0 70,25 0,0" fill="#43a047"/>
+            <polygon points="0,0 70,25 0,50 -70,25" fill="#388e3c"/>
+            <polygon points="-70,-25 0,0 -70,25 -140,0" fill="#43a047"/>
+            <!-- 草地点缀 像素花/草 -->
+            <g fill="#81c784">
+              <rect x="-30" y="-30" width="2" height="3"/>
+              <rect x="10" y="-20" width="2" height="3"/>
+              <rect x="40" y="-5" width="2" height="3"/>
+              <rect x="-20" y="10" width="2" height="3"/>
+            </g>
+            <g fill="#f06292">
+              <rect x="-10" y="-35" width="2" height="2"/>
+              <rect x="30" y="5" width="2" height="2"/>
+            </g>
+            <g fill="#ffd54f">
+              <rect x="20" y="-28" width="2" height="2"/>
+              <rect x="-40" y="5" width="2" height="2"/>
+            </g>
+
+            <!-- 像素树 -->
+            <g transform="translate(-35, -55)">
+              <!-- 树干 -->
+              <rect x="-3" y="8" width="6" height="16" fill="#8d6e63"/>
+              <rect x="-4" y="10" width="1" height="12" fill="#6d4c41"/>
+              <!-- 树冠 -->
+              <rect x="-10" y="-4" width="20" height="12" fill="#2e7d32"/>
+              <rect x="-8" y="-10" width="16" height="6" fill="#388e3c"/>
+              <rect x="-5" y="-16" width="10" height="6" fill="#43a047"/>
+              <!-- 高光 -->
+              <rect x="-7" y="-2" width="4" height="4" fill="#4caf50"/>
+              <rect x="-4" y="-8" width="4" height="3" fill="#66bb6a"/>
+            </g>
+
+            <!-- 像素小屋 -->
+            <g transform="translate(25, -35)">
+              <!-- 屋顶 红瓦 -->
+              <rect x="-18" y="-28" width="36" height="4" fill="#c62828"/>
+              <rect x="-16" y="-32" width="32" height="4" fill="#d32f2f"/>
+              <rect x="-12" y="-36" width="24" height="4" fill="#e53935"/>
+              <!-- 屋顶纹理 -->
+              <g fill="#b71c1c">
+                <rect x="-18" y="-26" width="2" height="2"/>
+                <rect x="-10" y="-26" width="2" height="2"/>
+                <rect x="-2" y="-26" width="2" height="2"/>
+                <rect x="6" y="-26" width="2" height="2"/>
+                <rect x="14" y="-26" width="2" height="2"/>
+              </g>
+              <!-- 墙体 -->
+              <rect x="-16" y="-24" width="32" height="28" fill="#fff3e0"/>
+              <rect x="-16" y="-24" width="32" height="2" fill="#ffe0b2"/>
+              <rect x="-16" y="0" width="32" height="4" fill="#d7ccc8"/>
+              <!-- 砖墙纹理 -->
+              <g fill="#d7ccc8">
+                <rect x="-16" y="-18" width="32" height="1"/>
+                <rect x="-16" y="-10" width="32" height="1"/>
+                <rect x="-16" y="-2" width="32" height="1"/>
+              </g>
+              <!-- 左墙窗户 -->
+              <rect x="-12" y="-18" width="8" height="8" fill="#81d4fa"/>
+              <rect x="-12" y="-18" width="8" height="2" fill="#b3e5fc"/>
+              <line x1="-8" y1="-18" x2="-8" y2="-10" stroke="#4fc3f7" stroke-width="1"/>
+              <line x1="-12" y1="-14" x2="-4" y2="-14" stroke="#4fc3f7" stroke-width="1"/>
+              <!-- 右墙窗户 -->
+              <rect x="4" y="-18" width="8" height="8" fill="#81d4fa"/>
+              <rect x="4" y="-18" width="8" height="2" fill="#b3e5fc"/>
+              <line x1="8" y1="-18" x2="8" y2="-10" stroke="#4fc3f7" stroke-width="1"/>
+              <line x1="4" y1="-14" x2="12" y2="-14" stroke="#4fc3f7" stroke-width="1"/>
+              <!-- 门 -->
+              <rect x="-4" y="-8" width="8" height="12" fill="#8d6e63"/>
+              <rect x="-4" y="-8" width="8" height="2" fill="#a1887f"/>
+              <rect x="2" y="-2" width="2" height="2" fill="#ffd54f"/>
+              <!-- 烟囱 -->
+              <rect x="8" y="-38" width="5" height="8" fill="#795548"/>
+              <rect x="8" y="-38" width="5" height="2" fill="#6d4c41"/>
+            </g>
+          </g>
+
+          <!-- 像素猫咪 橘猫 -->
+          <g transform="translate(110, 230)">
+            <!-- 身体 -->
+            <rect x="-10" y="-2" width="20" height="12" fill="#ff8a65"/>
+            <rect x="-8" y="-6" width="16" height="4" fill="#ff8a65"/>
+            <!-- 身体条纹 -->
+            <g fill="#e64a19">
+              <rect x="-6" y="0" width="2" height="8"/>
+              <rect x="0" y="0" width="2" height="8"/>
+              <rect x="6" y="0" width="2" height="8"/>
+            </g>
+            <!-- 头 -->
+            <rect x="-8" y="-14" width="16" height="10" fill="#ff8a65"/>
+            <rect x="-10" y="-12" width="2" height="6" fill="#ff8a65"/>
+            <rect x="8" y="-12" width="2" height="6" fill="#ff8a65"/>
+            <!-- 耳朵 -->
+            <rect x="-8" y="-18" width="4" height="4" fill="#ff8a65"/>
+            <rect x="4" y="-18" width="4" height="4" fill="#ff8a65"/>
+            <rect x="-7" y="-17" width="2" height="2" fill="#ffccbc"/>
+            <rect x="5" y="-17" width="2" height="2" fill="#ffccbc"/>
+            <!-- 眼睛 -->
+            <rect x="-5" y="-11" width="3" height="3" fill="#1a1a2e"/>
+            <rect x="2" y="-11" width="3" height="3" fill="#1a1a2e"/>
+            <rect x="-4" y="-10" width="1" height="1" fill="white"/>
+            <rect x="3" y="-10" width="1" height="1" fill="white"/>
+            <!-- 鼻子 -->
+            <rect x="-1" y="-7" width="2" height="2" fill="#f06292"/>
+            <!-- 嘴 -->
+            <rect x="-2" y="-5" width="1" height="1" fill="#1a1a2e"/>
+            <rect x="1" y="-5" width="1" height="1" fill="#1a1a2e"/>
+            <!-- 胡须 -->
+            <rect x="-9" y="-8" width="3" height="1" fill="#ffccbc"/>
+            <rect x="-9" y="-6" width="3" height="1" fill="#ffccbc"/>
+            <rect x="6" y="-8" width="3" height="1" fill="#ffccbc"/>
+            <rect x="6" y="-6" width="3" height="1" fill="#ffccbc"/>
+            <!-- 尾巴 -->
+            <rect x="10" y="0" width="4" height="2" fill="#ff8a65"/>
+            <rect x="12" y="-2" width="2" height="2" fill="#ff8a65"/>
+            <rect x="14" y="-4" width="2" height="2" fill="#ff8a65"/>
+          </g>
+        </svg>
+      </div>
+      <div class="style-info">
+        <h3>16-bit 日式治愈风</h3>
+        <div class="sub-title">明亮柔和 · 温暖治愈 · 经典 JRPG 感</div>
+        <p>类似星露谷物语、动物森友会的明亮风格。饱和但不刺眼的色彩，丰富的像素细节，温馨的田园小镇氛围，与"猫咪陪伴+城市建造"的调性高度契合。</p>
+        <div class="style-meta">
+          <div class="meta-item">
+            <div class="meta-label">色数</div>
+            <div class="meta-value">64-128色</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">像素尺寸</div>
+            <div class="meta-value">32×32</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">开发量</div>
+            <div class="meta-value">中等</div>
+          </div>
+        </div>
+        <div class="style-pros-cons">
+          <div class="pros">
+            <strong>优点</strong>
+            <ul>
+              <li>治愈感强，受众广</li>
+              <li>色彩丰富，层次分明</li>
+              <li>与喵星调性完美契合</li>
+              <li>素材产出效率较高</li>
+            </ul>
+          </div>
+          <div class="cons">
+            <strong>缺点</strong>
+            <ul>
+              <li>风格较常见，辨识度一般</li>
+              <li>深色背景下需调整</li>
+              <li>像素画师需求明确</li>
+            </ul>
+          </div>
+        </div>
+        <div class="ref-games">
+          <strong>参考作品：</strong>星露谷物语 · 动物森友会 · 牧场物语 · 太阳港
+        </div>
+      </div>
+    </div>
+
+    <!-- 风格2：8-bit 复古FC风 -->
+    <div class="style-card">
+      <div class="style-preview">
+        <span class="badge-tag">8-bit 复古</span>
+        <svg viewBox="0 0 400 320" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+          <!-- 纯色天空 8-bit 只有几层 -->
+          <rect width="400" height="180" fill="#3498db"/>
+          <rect width="400" height="180" fill="#2980b9" opacity="0"/>
+          <!-- 云 极简方块 -->
+          <g fill="white">
+            <rect x="40" y="30" width="24" height="4"/>
+            <rect x="44" y="26" width="16" height="4"/>
+            <rect x="260" y="50" width="28" height="4"/>
+            <rect x="264" y="46" width="20" height="4"/>
+          </g>
+          <!-- 山 三角形阶梯 -->
+          <polygon points="0,180 60,120 120,180" fill="#27ae60"/>
+          <polygon points="280,180 350,100 420,180" fill="#27ae60"/>
+
+          <!-- 等距地面 -->
+          <g transform="translate(200, 210)">
+            <!-- 菱形地面 双色格 -->
+            <polygon points="0,-45 65,-22 0,1 -65,-22" fill="#27ae60"/>
+            <polygon points="65,-22 130,1 65,24 0,1" fill="#2ecc71"/>
+            <polygon points="0,1 65,24 0,47 -65,24" fill="#219a45"/>
+            <polygon points="-65,-22 0,1 -65,24 -130,1" fill="#2ecc71"/>
+            <!-- 棋盘格纹理 -->
+            <g fill="#219a45" opacity="0.3">
+              <rect x="-20" y="-30" width="4" height="2"/>
+              <rect x="-10" y="-20" width="4" height="2"/>
+              <rect x="0" y="-10" width="4" height="2"/>
+              <rect x="10" y="0" width="4" height="2"/>
+              <rect x="-30" y="-10" width="4" height="2"/>
+              <rect x="20" y="-20" width="4" height="2"/>
+            </g>
+
+            <!-- 8-bit 树 -->
+            <g transform="translate(-30, -50)">
+              <rect x="-2" y="6" width="4" height="14" fill="#8b4513"/>
+              <rect x="-8" y="-2" width="16" height="8" fill="#228b22"/>
+              <rect x="-5" y="-8" width="10" height="6" fill="#32cd32"/>
+            </g>
+
+            <!-- 8-bit 小屋 -->
+            <g transform="translate(20, -30)">
+              <!-- 屋顶 -->
+              <rect x="-15" y="-24" width="30" height="4" fill="#c0392b"/>
+              <rect x="-12" y="-28" width="24" height="4" fill="#e74c3c"/>
+              <rect x="-8" y="-32" width="16" height="4" fill="#e74c3c"/>
+              <!-- 墙体 -->
+              <rect x="-14" y="-20" width="28" height="24" fill="#f5deb3"/>
+              <rect x="-14" y="0" width="28" height="4" fill="#deb887"/>
+              <!-- 窗户 -->
+              <rect x="-10" y="-16" width="6" height="6" fill="#87ceeb"/>
+              <rect x="4" y="-16" width="6" height="6" fill="#87ceeb"/>
+              <rect x="-10" y="-16" width="6" height="2" fill="#add8e6"/>
+              <rect x="4" y="-16" width="6" height="2" fill="#add8e6"/>
+              <!-- 门 -->
+              <rect x="-3" y="-8" width="6" height="12" fill="#8b4513"/>
+              <rect x="1" y="-4" width="1" height="2" fill="#ffd700"/>
+            </g>
+          </g>
+
+          <!-- 8-bit 猫 -->
+          <g transform="translate(115, 240)">
+            <rect x="-8" y="0" width="16" height="10" fill="#ffa500"/>
+            <rect x="-6" y="-4" width="12" height="4" fill="#ffa500"/>
+            <rect x="-6" y="-10" width="12" height="6" fill="#ffa500"/>
+            <rect x="-6" y="-14" width="3" height="4" fill="#ffa500"/>
+            <rect x="3" y="-14" width="3" height="4" fill="#ffa500"/>
+            <rect x="-4" y="-8" width="2" height="2" fill="black"/>
+            <rect x="2" y="-8" width="2" height="2" fill="black"/>
+            <rect x="-1" y="-5" width="2" height="1" fill="#ff69b4"/>
+            <rect x="8" y="2" width="4" height="2" fill="#ffa500"/>
+          </g>
+        </svg>
+      </div>
+      <div class="style-info">
+        <h3>8-bit 复古 FC 风</h3>
+        <div class="sub-title">怀旧经典 · 硬边像素 · 限制色板</div>
+        <p>类似红白机时代的经典像素风格，硬边锯齿、有限色板（16-32色）、大块色块。强烈的怀旧感，独特的复古美学，但细节表达能力有限。</p>
+        <div class="style-meta">
+          <div class="meta-item">
+            <div class="meta-label">色数</div>
+            <div class="meta-value">16-32色</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">像素尺寸</div>
+            <div class="meta-value">16×16</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">开发量</div>
+            <div class="meta-value">较低</div>
+          </div>
+        </div>
+        <div class="style-pros-cons">
+          <div class="pros">
+            <strong>优点</strong>
+            <ul>
+              <li>风格强烈，辨识度高</li>
+              <li>绘制速度快，成本低</li>
+              <li>独特的怀旧氛围</li>
+            </ul>
+          </div>
+          <div class="cons">
+            <strong>缺点</strong>
+            <ul>
+              <li>细节表现力弱</li>
+              <li>与治愈调性有差距</li>
+              <li>受众相对小众</li>
+            </ul>
+          </div>
+        </div>
+        <div class="ref-games">
+          <strong>参考作品：</strong>超级马里奥 · 塞尔达传说 · 口袋妖怪（初代）· 热血系列
+        </div>
+      </div>
+    </div>
+
+    <!-- 风格3：柔和现代像素风 -->
+    <div class="style-card">
+      <div class="style-preview">
+        <span class="badge-tag">现代柔和</span>
+        <svg viewBox="0 0 400 320" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+          <!-- 柔和天空 -->
+          <defs>
+            <linearGradient id="sky3" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#ffecd2"/>
+              <stop offset="50%" stop-color="#fcb69f"/>
+              <stop offset="100%" stop-color="#a8edea"/>
+            </linearGradient>
+          </defs>
+          <rect width="400" height="320" fill="url(#sky3)"/>
+          <!-- 柔和云朵 -->
+          <g fill="white" opacity="0.8">
+            <ellipse cx="80" cy="60" rx="30" ry="8"/>
+            <ellipse cx="320" cy="80" rx="35" ry="10"/>
+          </g>
+
+          <g transform="translate(200, 200)">
+            <!-- 柔和草地 -->
+            <defs>
+              <linearGradient id="grass3" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#95e1a3"/>
+                <stop offset="100%" stop-color="#6bcf7e"/>
+              </linearGradient>
+            </defs>
+            <polygon points="0,-50 70,-25 0,0 -70,-25" fill="#7dd890"/>
+            <polygon points="70,-25 140,0 70,25 0,0" fill="#6bcf7e"/>
+            <polygon points="0,0 70,25 0,50 -70,25" fill="#5ac46e"/>
+            <polygon points="-70,-25 0,0 -70,25 -130,0" fill="#6bcf7e"/>
+            <!-- 草地细节 -->
+            <g fill="#95e1a3">
+              <rect x="-25" y="-28" width="2" height="2"/>
+              <rect x="-15" y="-22" width="2" height="2"/>
+              <rect x="5" y="-18" width="2" height="2"/>
+              <rect x="25" y="-10" width="2" height="2"/>
+              <rect x="-35" y="-8" width="2" height="2"/>
+              <rect x="-10" y="5" width="2" height="2"/>
+            </g>
+            <g fill="#f8bbd0">
+              <rect x="-5" y="-32" width="2" height="2"/>
+              <rect x="35" y="0" width="2" height="2"/>
+            </g>
+            <g fill="#fff59d">
+              <rect x="15" y="-25" width="2" height="2"/>
+              <rect x="-20" y="10" width="2" height="2"/>
+            </g>
+
+            <!-- 柔和树 -->
+            <g transform="translate(-35, -58)">
+              <rect x="-3" y="10" width="6" height="18" fill="#a1887f"/>
+              <ellipse cx="0" cy="0" rx="14" ry="12" fill="#66bb6a"/>
+              <ellipse cx="-4" cy="-4" rx="7" ry="6" fill="#81c784"/>
+              <ellipse cx="5" cy="2" rx="5" ry="4" fill="#9ccc65" opacity="0.5"/>
+            </g>
+
+            <!-- 柔和小屋 -->
+            <g transform="translate(25, -38)">
+              <!-- 屋顶 -->
+              <ellipse cx="0" cy="-28" rx="20" ry="8" fill="#ef9a9a"/>
+              <rect x="-18" y="-28" width="36" height="6" fill="#f48fb1"/>
+              <!-- 墙体 -->
+              <rect x="-16" y="-22" width="32" height="30" fill="#fff8e1"/>
+              <rect x="-16" y="-22" width="32" height="3" fill="#ffecb3"/>
+              <rect x="-16" y="4" width="32" height="4" fill="#ffe0b2"/>
+              <!-- 窗户 圆角感 -->
+              <rect x="-11" y="-16" width="7" height="8" fill="#81d4fa" rx="1"/>
+              <rect x="4" y="-16" width="7" height="8" fill="#81d4fa" rx="1"/>
+              <rect x="-11" y="-16" width="7" height="2" fill="#b3e5fc"/>
+              <rect x="4" y="-16" width="7" height="2" fill="#b3e5fc"/>
+              <!-- 窗帘 -->
+              <rect x="-11" y="-16" width="2" height="8" fill="#f8bbd0"/>
+              <rect x="4" y="-16" width="2" height="8" fill="#f8bbd0"/>
+              <!-- 门 -->
+              <rect x="-4" y="-10" width="8" height="14" fill="#d7ccc8"/>
+              <rect x="-4" y="-10" width="8" height="2" fill="#efebe9"/>
+              <rect x="2" y="-3" width="2" height="2" fill="#ffd54f"/>
+              <!-- 屋顶小花 -->
+              <rect x="-5" y="-35" width="2" height="3" fill="#f06292"/>
+              <rect x="6" y="-33" width="2" height="3" fill="#ce93d8"/>
+            </g>
+          </g>
+
+          <!-- 柔和猫 -->
+          <g transform="translate(108, 235)">
+            <ellipse cx="0" cy="4" rx="12" ry="9" fill="#ffcc80"/>
+            <ellipse cx="0" cy="-6" rx="10" ry="8" fill="#ffcc80"/>
+            <!-- 耳朵 -->
+            <polygon points="-7,-10 -5,-18 -2,-10" fill="#ffcc80"/>
+            <polygon points="7,-10 5,-18 2,-10" fill="#ffcc80"/>
+            <polygon points="-6,-11 -5,-16 -3,-11" fill="#ffab91"/>
+            <polygon points="6,-11 5,-16 3,-11" fill="#ffab91"/>
+            <!-- 眼睛 大大圆圆 -->
+            <circle cx="-4" cy="-6" r="2.5" fill="white"/>
+            <circle cx="4" cy="-6" r="2.5" fill="white"/>
+            <circle cx="-3.5" cy="-5.5" r="1.5" fill="#1a1a2e"/>
+            <circle cx="4.5" cy="-5.5" r="1.5" fill="#1a1a2e"/>
+            <circle cx="-3" cy="-6.5" r="0.8" fill="white"/>
+            <circle cx="5" cy="-6.5" r="0.8" fill="white"/>
+            <!-- 鼻子 -->
+            <ellipse cx="0" cy="-2" rx="1.5" ry="1" fill="#f48fb1"/>
+            <!-- 腮红 -->
+            <circle cx="-8" cy="-2" r="2" fill="#ffab91" opacity="0.5"/>
+            <circle cx="8" cy="-2" r="2" fill="#ffab91" opacity="0.5"/>
+            <!-- 尾巴 -->
+            <path d="M11,2 Q18,-2 16,-8" stroke="#ffcc80" stroke-width="4" fill="none" stroke-linecap="round"/>
+          </g>
+        </svg>
+      </div>
+      <div class="style-info">
+        <h3>现代柔和像素风</h3>
+        <div class="sub-title">圆润软边 · 马卡龙色 · 独立游戏感</div>
+        <p>类似 Celeste、Eastward、Omori 等现代独立游戏的像素风格。虽然基于像素，但大量使用渐变、柔边和丰富色阶，既有像素的精致感又有插画的治愈感。</p>
+        <div class="style-meta">
+          <div class="meta-item">
+            <div class="meta-label">色数</div>
+            <div class="meta-value">128+ 色</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">像素尺寸</div>
+            <div class="meta-value">48×48</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">开发量</div>
+            <div class="meta-value">较高</div>
+          </div>
+        </div>
+        <div class="style-pros-cons">
+          <div class="pros">
+            <strong>优点</strong>
+            <ul>
+              <li>视觉品质最高</li>
+              <li>治愈感+精致感兼具</li>
+              <li>现代独立游戏调性</li>
+            </ul>
+          </div>
+          <div class="cons">
+            <strong>缺点</strong>
+            <ul>
+              <li>绘制难度最大</li>
+              <li>对画师要求高</li>
+              <li>等距角度难度大</li>
+            </ul>
+          </div>
+        </div>
+        <div class="ref-games">
+          <strong>参考作品：</strong>Celeste · Eastward · Omori · 风来之国 · 哈迪斯
+        </div>
+      </div>
+    </div>
+
+    <!-- 风格4：深色赛博朋克 -->
+    <div class="style-card">
+      <div class="style-preview">
+        <span class="badge-tag">赛博朋克</span>
+        <svg viewBox="0 0 400 320" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+          <!-- 深色夜空 -->
+          <rect width="400" height="320" fill="#0d0221"/>
+          <rect width="400" height="200" fill="#1a0a36"/>
+          <!-- 星星 -->
+          <g fill="white">
+            <rect x="30" y="30" width="1" height="1" opacity="0.8"/>
+            <rect x="80" y="60" width="2" height="2" opacity="0.6"/>
+            <rect x="150" y="25" width="1" height="1" opacity="0.7"/>
+            <rect x="250" y="50" width="1" height="1" opacity="0.9"/>
+            <rect x="320" y="30" width="2" height="2" opacity="0.5"/>
+            <rect x="360" y="70" width="1" height="1" opacity="0.8"/>
+          </g>
+          <!-- 霓虹光晕 -->
+          <ellipse cx="100" cy="250" rx="80" ry="30" fill="#ff00ff" opacity="0.1"/>
+          <ellipse cx="300" cy="260" rx="80" ry="30" fill="#00ffff" opacity="0.1"/>
+
+          <g transform="translate(200, 210)">
+            <!-- 深色地面 赛博街道 -->
+            <polygon points="0,-45 70,-22 0,1 -70,-22" fill="#1a1a2e"/>
+            <polygon points="70,-22 140,0 70,25 0,1" fill="#16213e"/>
+            <polygon points="0,1 70,25 0,48 -70,24" fill="#0f0f1a"/>
+            <polygon points="-70,-22 0,1 -70,24 -140,0" fill="#16213e"/>
+            <!-- 地面霓虹反光 -->
+            <g opacity="0.4">
+              <rect x="-20" y="-20" width="40" height="2" fill="#e91e63"/>
+              <rect x="10" y="5" width="30" height="2" fill="#00bcd4"/>
+            </g>
+
+            <!-- 赛博摩天楼 -->
+            <g transform="translate(-30, -80)">
+              <!-- 楼体 -->
+              <rect x="-8" y="0" width="16" height="50" fill="#2c3e50"/>
+              <rect x="-10" y="-4" width="20" height="4" fill="#34495e"/>
+              <!-- 窗户 霓虹 -->
+              <g fill="#00e5ff">
+                <rect x="-5" y="5" width="3" height="4"/>
+                <rect x="2" y="5" width="3" height="4"/>
+                <rect x="-5" y="13" width="3" height="4"/>
+                <rect x="2" y="13" width="3" height="4"/>
+                <rect x="-5" y="21" width="3" height="4"/>
+                <rect x="2" y="21" width="3" height="4"/>
+                <rect x="-5" y="29" width="3" height="4"/>
+                <rect x="2" y="29" width="3" height="4"/>
+              </g>
+              <!-- 顶层霓虹 -->
+              <rect x="-6" y="-6" width="12" height="2" fill="#e91e63"/>
+              <rect x="-3" y="-10" width="6" height="4" fill="#9c27b0"/>
+            </g>
+
+            <!-- 赛博小店 -->
+            <g transform="translate(25, -40)">
+              <!-- 楼体 -->
+              <rect x="-15" y="0" width="30" height="30" fill="#2d2d44"/>
+              <rect x="-17" y="-3" width="34" height="3" fill="#3d3d5c"/>
+              <!-- 霓虹招牌 -->
+              <rect x="-12" y="-8" width="24" height="5" fill="#ff00ff" opacity="0.8"/>
+              <rect x="-12" y="-8" width="24" height="5" fill="none" stroke="#ff00ff" stroke-width="1" opacity="0.5"/>
+              <!-- 窗户 -->
+              <g fill="#00e5ff">
+                <rect x="-10" y="4" width="8" height="8"/>
+                <rect x="2" y="4" width="8" height="8"/>
+              </g>
+              <!-- 门 -->
+              <rect x="-4" y="16" width="8" height="14" fill="#1a1a2e"/>
+              <rect x="-4" y="16" width="8" height="2" fill="#e91e63"/>
+            </g>
+          </g>
+
+          <!-- 赛博猫 霓虹眼 -->
+          <g transform="translate(110, 245)">
+            <rect x="-9" y="0" width="18" height="12" fill="#2d2d44"/>
+            <rect x="-7" y="-4" width="14" height="4" fill="#2d2d44"/>
+            <rect x="-7" y="-10" width="14" height="6" fill="#2d2d44"/>
+            <!-- 耳朵 -->
+            <rect x="-7" y="-14" width="3" height="4" fill="#2d2d44"/>
+            <rect x="4" y="-14" width="3" height="4" fill="#2d2d44"/>
+            <!-- 霓虹眼 -->
+            <rect x="-5" y="-8" width="3" height="3" fill="#00e5ff"/>
+            <rect x="2" y="-8" width="3" height="3" fill="#ff00ff"/>
+            <!-- 鼻子 -->
+            <rect x="-1" y="-4" width="2" height="2" fill="#e91e63"/>
+            <!-- 尾巴 霓虹 -->
+            <rect x="9" y="2" width="6" height="2" fill="#2d2d44"/>
+            <rect x="14" y="0" width="2" height="2" fill="#00e5ff"/>
+          </g>
+        </svg>
+      </div>
+      <div class="style-info">
+        <h3>深色赛博朋克风</h3>
+        <div class="sub-title">霓虹高对比 · 未来都市 · 夜之城</div>
+        <p>类似 Katana Zero、赛博朋克酒保行动的风格。深色调+霓虹发光，强烈的未来感和赛博氛围，与"都市复兴"主题有契合点，但与"治愈猫咪"调性差距较大。</p>
+        <div class="style-meta">
+          <div class="meta-item">
+            <div class="meta-label">色数</div>
+            <div class="meta-value">32-64色</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">像素尺寸</div>
+            <div class="meta-value">32×32</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">开发量</div>
+            <div class="meta-value">中等</div>
+          </div>
+        </div>
+        <div class="style-pros-cons">
+          <div class="pros">
+            <strong>优点</strong>
+            <ul>
+              <li>视觉冲击力强</li>
+              <li>与深色背景完美契合</li>
+              <li>未来都市感强</li>
+            </ul>
+          </div>
+          <div class="cons">
+            <strong>缺点</strong>
+            <ul>
+              <li>与治愈调性冲突</li>
+              <li>猫咪可爱度下降</li>
+              <li>前期成长阶段难表现</li>
+            </ul>
+          </div>
+        </div>
+        <div class="ref-games">
+          <strong>参考作品：</strong>Katana Zero · VA-11 Hall-A · 赛博朋克2077(像素版) · Ghostrunner
+        </div>
+      </div>
+    </div>
+
+    <!-- 风格5：Q版可爱像素风 -->
+    <div class="style-card">
+      <div class="style-preview">
+        <span class="badge-tag">Q版可爱</span>
+        <svg viewBox="0 0 400 320" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+          <!-- 粉蓝天空 -->
+          <defs>
+            <linearGradient id="sky5" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#e1f5fe"/>
+              <stop offset="100%" stop-color="#b3e5fc"/>
+            </linearGradient>
+          </defs>
+          <rect width="400" height="320" fill="url(#sky5)"/>
+          <!-- 彩虹云 -->
+          <g>
+            <ellipse cx="70" cy="50" rx="28" ry="10" fill="white"/>
+            <ellipse cx="330" cy="70" rx="32" ry="12" fill="white"/>
+            <!-- 热气球 -->
+            <ellipse cx="200" cy="45" rx="15" ry="18" fill="#ff8a80"/>
+            <rect x="197" y="60" width="6" height="8" fill="#ffcdd2"/>
+            <rect x="193" y="68" width="14" height="4" fill="#8d6e63"/>
+          </g>
+
+          <g transform="translate(200, 210)">
+            <!-- 糖果色草地 -->
+            <polygon points="0,-45 70,-22 0,1 -70,-22" fill="#a5d6a7"/>
+            <polygon points="70,-22 140,0 70,25 0,1" fill="#81c784"/>
+            <polygon points="0,1 70,25 0,48 -70,24" fill="#66bb6a"/>
+            <polygon points="-70,-22 0,1 -70,24 -140,0" fill="#81c784"/>
+            <!-- 可爱花朵 -->
+            <g>
+              <rect x="-28" y="-25" width="2" height="5" fill="#f48fb1"/>
+              <rect x="-30" y="-27" width="2" height="2" fill="#fce4ec"/>
+              <rect x="-26" y="-27" width="2" height="2" fill="#fce4ec"/>
+              <rect x="-28" y="-29" width="2" height="2" fill="#fce4ec"/>
+            </g>
+            <g>
+              <rect x="12" y="-20" width="2" height="5" fill="#ce93d8"/>
+              <rect x="10" y="-22" width="2" height="2" fill="#f3e5f5"/>
+              <rect x="14" y="-22" width="2" height="2" fill="#f3e5f5"/>
+              <rect x="12" y="-24" width="2" height="2" fill="#f3e5f5"/>
+            </g>
+            <g>
+              <rect x="30" y="-5" width="2" height="5" fill="#fff59d"/>
+              <rect x="28" y="-7" width="2" height="2" fill="#fffde7"/>
+              <rect x="32" y="-7" width="2" height="2" fill="#fffde7"/>
+              <rect x="30" y="-9" width="2" height="2" fill="#fffde7"/>
+            </g>
+
+            <!-- Q版蘑菇树 -->
+            <g transform="translate(-35, -50)">
+              <!-- 树干 -->
+              <rect x="-3" y="8" width="6" height="16" fill="#ffe0b2"/>
+              <rect x="-2" y="10" width="1" height="12" fill="#ffcc80"/>
+              <!-- 蘑菇帽 -->
+              <ellipse cx="0" cy="2" rx="14" ry="10" fill="#ef5350"/>
+              <!-- 斑点 -->
+              <circle cx="-5" cy="0" r="2" fill="white"/>
+              <circle cx="4" cy="-2" r="2.5" fill="white"/>
+              <circle cx="0" cy="4" r="1.5" fill="white"/>
+            </g>
+
+            <!-- Q版糖果屋 -->
+            <g transform="translate(25, -35)">
+              <!-- 屋顶 糖果色 -->
+              <polygon points="-18,-26 0,-40 18,-26" fill="#ff80ab"/>
+              <polygon points="-18,-26 0,-40 0,-28 -18,-14" fill="#f06292" opacity="0.5"/>
+              <!-- 糖霜装饰 -->
+              <rect x="-15" y="-26" width="30" height="3" fill="#fff9c4"/>
+              <rect x="-12" y="-29" width="2" height="3" fill="#fff9c4"/>
+              <rect x="-5" y="-31" width="2" height="5" fill="#fff9c4"/>
+              <rect x="2" y="-30" width="2" height="4" fill="#fff9c4"/>
+              <rect x="8" y="-29" width="2" height="3" fill="#fff9c4"/>
+              <!-- 墙体 -->
+              <rect x="-16" y="-23" width="32" height="28" fill="#fff3e0"/>
+              <rect x="-16" y="-23" width="32" height="3" fill="#ffe0b2"/>
+              <!-- 饼干纹理 -->
+              <g fill="#ffcc80" opacity="0.3">
+                <rect x="-12" y="-15" width="2" height="2"/>
+                <rect x="-4" y="-10" width="2" height="2"/>
+                <rect x="6" y="-15" width="2" height="2"/>
+                <rect x="10" y="-5" width="2" height="2"/>
+                <rect x="-10" y="0" width="2" height="2"/>
+              </g>
+              <!-- 窗户 糖霜边 -->
+              <rect x="-11" y="-18" width="7" height="9" fill="#81d4fa"/>
+              <rect x="-12" y="-19" width="9" height="2" fill="#fff9c4"/>
+              <rect x="-12" y="-11" width="9" height="2" fill="#fff9c4"/>
+              <rect x="4" y="-18" width="7" height="9" fill="#81d4fa"/>
+              <rect x="3" y="-19" width="9" height="2" fill="#fff9c4"/>
+              <rect x="3" y="-11" width="9" height="2" fill="#fff9c4"/>
+              <!-- 门 糖果色 -->
+              <rect x="-4" y="-10" width="8" height="15" fill="#ce93d8"/>
+              <rect x="-4" y="-10" width="8" height="2" fill="#e1bee7"/>
+              <rect x="2" y="-3" width="2" height="2" fill="#ffd54f"/>
+            </g>
+          </g>
+
+          <!-- Q版大头猫 -->
+          <g transform="translate(108, 240)">
+            <!-- 身体 小小的 -->
+            <ellipse cx="0" cy="6" rx="9" ry="6" fill="#ffb74d"/>
+            <!-- 头 大大的 -->
+            <ellipse cx="0" cy="-5" rx="13" ry="11" fill="#ffb74d"/>
+            <!-- 耳朵 尖尖 -->
+            <polygon points="-10,-10 -7,-22 -3,-10" fill="#ffb74d"/>
+            <polygon points="10,-10 7,-22 3,-10" fill="#ffb74d"/>
+            <polygon points="-8,-11 -6.5,-19 -5,-11" fill="#ffccbc"/>
+            <polygon points="8,-11 6.5,-19 5,-11" fill="#ffccbc"/>
+            <!-- 眼睛 大大 -->
+            <ellipse cx="-5" cy="-5" rx="3" ry="3.5" fill="white"/>
+            <ellipse cx="5" cy="-5" rx="3" ry="3.5" fill="white"/>
+            <ellipse cx="-4.5" cy="-4.5" rx="2" ry="2.5" fill="#1a1a2e"/>
+            <ellipse cx="5.5" cy="-4.5" rx="2" ry="2.5" fill="#1a1a2e"/>
+            <circle cx="-4" cy="-5.5" r="1" fill="white"/>
+            <circle cx="6" cy="-5.5" r="1" fill="white"/>
+            <!-- 小鼻子 -->
+            <ellipse cx="0" cy="-1" rx="1.5" ry="1" fill="#f48fb1"/>
+            <!-- 腮红 -->
+            <circle cx="-9" cy="-1" r="2.5" fill="#ffab91" opacity="0.5"/>
+            <circle cx="9" cy="-1" r="2.5" fill="#ffab91" opacity="0.5"/>
+            <!-- 小尾巴 -->
+            <path d="M8,5 Q14,2 12,-3" stroke="#ffb74d" stroke-width="4" fill="none" stroke-linecap="round"/>
+          </g>
+        </svg>
+      </div>
+      <div class="style-info">
+        <h3>Q版可爱像素风</h3>
+        <div class="sub-title">大头小身 · 马卡龙色 · 糖果治愈</div>
+        <p>类似动物森友会、星之卡比的超可爱风格。2-3头身比例，圆润造型，糖果色搭配，极致的可爱和治愈感，女性向受众吸引力极强。</p>
+        <div class="style-meta">
+          <div class="meta-item">
+            <div class="meta-label">色数</div>
+            <div class="meta-value">64-96色</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">像素尺寸</div>
+            <div class="meta-value">32×32</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">开发量</div>
+            <div class="meta-value">中等</div>
+          </div>
+        </div>
+        <div class="style-pros-cons">
+          <div class="pros">
+            <strong>优点</strong>
+            <ul>
+              <li>可爱度爆表</li>
+              <li>与猫咪调性完美契合</li>
+              <li>女性向受众吸引力强</li>
+            </ul>
+          </div>
+          <div class="cons">
+            <strong>缺点</strong>
+            <ul>
+              <li>后期都市阶段难表现</li>
+              <li>风格偏幼态</li>
+              <li>辨识度不算特别高</li>
+            </ul>
+          </div>
+        </div>
+        <div class="ref-games">
+          <strong>参考作品：</strong>动物森友会 · 星之卡比 · 动森 · 摩尔庄园
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 技术实现对比 -->
+  <h2 class="section-title">五种风格技术对比</h2>
+  <div class="tech-compare">
+    <table>
+      <thead>
+        <tr>
+          <th>对比维度</th>
+          <th>16-bit 日式治愈</th>
+          <th>8-bit 复古FC</th>
+          <th>现代柔和像素</th>
+          <th>深色赛博朋克</th>
+          <th>Q版可爱</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>视觉表现力</td>
+          <td class="partial">★★★★☆</td>
+          <td class="cross">★★☆☆☆</td>
+          <td class="check">★★★★★</td>
+          <td class="partial">★★★★☆</td>
+          <td class="partial">★★★★☆</td>
+        </tr>
+        <tr>
+          <td>治愈感</td>
+          <td class="check">★★★★★</td>
+          <td class="cross">★★☆☆☆</td>
+          <td class="check">★★★★★</td>
+          <td class="cross">★☆☆☆☆</td>
+          <td class="check">★★★★★</td>
+        </tr>
+        <tr>
+          <td>与喵星调性契合</td>
+          <td class="check">★★★★★</td>
+          <td class="partial">★★★☆☆</td>
+          <td class="check">★★★★☆</td>
+          <td class="cross">★★☆☆☆</td>
+          <td class="check">★★★★★</td>
+        </tr>
+        <tr>
+          <td>绘制难度</td>
+          <td class="partial">中等</td>
+          <td class="check">简单</td>
+          <td class="cross">困难</td>
+          <td class="partial">中等</td>
+          <td class="partial">中等</td>
+        </tr>
+        <tr>
+          <td>等距实现难度</td>
+          <td class="partial">中等</td>
+          <td class="check">简单</td>
+          <td class="cross">困难</td>
+          <td class="partial">中等</td>
+          <td class="partial">中等</td>
+        </tr>
+        <tr>
+          <td>五阶段成长表现</td>
+          <td class="check">优秀</td>
+          <td class="partial">一般</td>
+          <td class="check">优秀</td>
+          <td class="cross">前期弱</td>
+          <td class="partial">后期弱</td>
+        </tr>
+        <tr>
+          <td>性能表现</td>
+          <td class="check">优秀</td>
+          <td class="check">极佳</td>
+          <td class="partial">良好</td>
+          <td class="check">优秀</td>
+          <td class="check">优秀</td>
+        </tr>
+        <tr>
+          <td>素材产出效率</td>
+          <td class="partial">中等</td>
+          <td class="check">快</td>
+          <td class="cross">慢</td>
+          <td class="partial">中等</td>
+          <td class="partial">中等</td>
+        </tr>
+        <tr>
+          <td>市场辨识度</td>
+          <td class="partial">中等</td>
+          <td class="check">高（复古）</td>
+          <td class="check">高</td>
+          <td class="check">高</td>
+          <td class="partial">中等</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 色板展示 -->
+  <h2 class="section-title">各风格核心色板</h2>
+  <div class="palette-section">
+    <div class="palette-grid">
+      <div class="palette-card">
+        <h4>16-bit 日式治愈</h4>
+        <div class="palette-colors">
+          <div class="palette-color" style="background:#4caf50"></div>
+          <div class="palette-color" style="background:#81c784"></div>
+          <div class="palette-color" style="background:#fff3e0"></div>
+          <div class="palette-color" style="background:#8d6e63"></div>
+          <div class="palette-color" style="background:#e53935"></div>
+          <div class="palette-color" style="background:#81d4fa"></div>
+          <div class="palette-color" style="background:#ff8a65"></div>
+          <div class="palette-color" style="background:#87ceeb"></div>
+        </div>
+      </div>
+      <div class="palette-card">
+        <h4>8-bit 复古FC</h4>
+        <div class="palette-colors">
+          <div class="palette-color" style="background:#27ae60"></div>
+          <div class="palette-color" style="background:#2ecc71"></div>
+          <div class="palette-color" style="background:#f5deb3"></div>
+          <div class="palette-color" style="background:#8b4513"></div>
+          <div class="palette-color" style="background:#e74c3c"></div>
+          <div class="palette-color" style="background:#87ceeb"></div>
+          <div class="palette-color" style="background:#ffa500"></div>
+          <div class="palette-color" style="background:#3498db"></div>
+        </div>
+      </div>
+      <div class="palette-card">
+        <h4>现代柔和像素</h4>
+        <div class="palette-colors">
+          <div class="palette-color" style="background:#7dd890"></div>
+          <div class="palette-color" style="background:#95e1a3"></div>
+          <div class="palette-color" style="background:#fff8e1"></div>
+          <div class="palette-color" style="background:#a1887f"></div>
+          <div class="palette-color" style="background:#ef9a9a"></div>
+          <div class="palette-color" style="background:#b3e5fc"></div>
+          <div class="palette-color" style="background:#ffcc80"></div>
+          <div class="palette-color" style="background:#fcb69f"></div>
+        </div>
+      </div>
+      <div class="palette-card">
+        <h4>深色赛博朋克</h4>
+        <div class="palette-colors">
+          <div class="palette-color" style="background:#0d0221"></div>
+          <div class="palette-color" style="background:#1a1a2e"></div>
+          <div class="palette-color" style="background:#2c3e50"></div>
+          <div class="palette-color" style="background:#ff00ff"></div>
+          <div class="palette-color" style="background:#00e5ff"></div>
+          <div class="palette-color" style="background:#e91e63"></div>
+          <div class="palette-color" style="background:#9c27b0"></div>
+          <div class="palette-color" style="background:#2d2d44"></div>
+        </div>
+      </div>
+      <div class="palette-card">
+        <h4>Q版可爱</h4>
+        <div class="palette-colors">
+          <div class="palette-color" style="background:#a5d6a7"></div>
+          <div class="palette-color" style="background:#81c784"></div>
+          <div class="palette-color" style="background:#fff3e0"></div>
+          <div class="palette-color" style="background:#ffb74d"></div>
+          <div class="palette-color" style="background:#ff80ab"></div>
+          <div class="palette-color" style="background:#81d4fa"></div>
+          <div class="palette-color" style="background:#ce93d8"></div>
+          <div class="palette-color" style="background:#b3e5fc"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 推荐总结 -->
+  <div class="summary">
+    <h3>💡 我的推荐</h3>
+    <p>
+      综合考虑「喵星复兴计划」的产品调性（猫咪陪伴 + 城市建造 + 治愈成长），
+      我最推荐 <strong style="color: var(--accent-orange)">「16-bit 日式治愈风」</strong> 作为主方向。
+      它在治愈感、与产品调性契合度、五阶段成长表现力、绘制难度之间取得了最佳平衡。
+      如果追求更高的视觉品质和独特性，可以考虑 <strong style="color: var(--accent-lavender)">「现代柔和像素风」</strong>，
+      但需要更高的美术投入。
+    </p>
+    <div class="recommendation">
+      <strong>首推：16-bit 日式治愈风 · 备选：现代柔和像素风</strong>
+      <p style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+        治愈感强 · 受众广泛 · 与猫咪建造调性完美契合 · 开发难度适中
+      </p>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

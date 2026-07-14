@@ -18,6 +18,7 @@ export interface ProgressState {
   fuel: number // 燃料（专注产出，用于建造）
   totalFocusMinutes: number // 累计专注分钟数
   totalPomodoros: number // 累计完成番茄钟数
+  population: number // 当前居民数量
 }
 
 /** 用户设置 */
@@ -69,6 +70,7 @@ export const INITIAL_PROGRESS: ProgressState = {
   fuel: 0,
   totalFocusMinutes: 0,
   totalPomodoros: 0,
+  population: 0,
 }
 
 /** 默认用户设置 */
